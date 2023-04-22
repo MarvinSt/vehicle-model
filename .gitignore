@@ -1,0 +1,8 @@
+**.dSYM
+/cpp/main
+.ipynb_checkpoints
+__pycache__
+*.sdf
+*.py
+*.ipynb
+.DS_Store

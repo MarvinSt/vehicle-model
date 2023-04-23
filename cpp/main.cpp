@@ -91,6 +91,28 @@ Rotation FromDirectionVector(Vec3 direction, CoordinateAxis axis = ZAxis)
     return Rotation().setRotationFromOneAxis(UnitVec3(direction), axis);
 }
 
+Rotation FromDirectionVector(Vec3 direction_a, Vec3 direction_b)
+{
+    return Rotation().setRotationFromTwoAxes(UnitVec3(direction_a), ZAxis, UnitVec3(direction_b), ZAxis);
+}
+
+Transform TransformWorldToBody(MobilizedBody body, Vec3 position, Vec3 direction, CoordinateAxis axis = ZAxis)
+{
+    auto transform = GetGlobalTransform(body);
+    position = (transform.invert() * Transform(position)).p();
+    // rotate into the desired direction
+    auto rotation = Rotation().setRotationFromOneAxis(UnitVec3(direction), axis);
+    // position = transform.R().invert() * rotation * position;
+    return Transform(rotation, position);
+}
+
+// Transform TransformWorldToBody(MobilizedBody body, Vec3 position)
+// {
+//     auto transform = GetGlobalTransform(body);
+//     Vec3 position = (transform.invert() * Transform(position)).p();
+//     return Transform(rotation, position);
+// }
+
 Constraint CreateLink(MobilizedBody &chassis_body, Vec3 chassis_link_pos, MobilizedBody &upright_body, Vec3 upright_link_pos, int variant = 1)
 {
     Constraint cons;
@@ -112,6 +134,15 @@ Constraint CreateLink(MobilizedBody &chassis_body, Vec3 chassis_link_pos, Mobili
 
 MobilizedBody CreateSteeringRack(JSON hardpoints, MobilizedBody &chassis_body)
 {
+    /*
+        The steering system consists of:
+        - steering rack (slider): lateral w.r.t. chassis
+        - pinion (1d velocity constraint): translation to rotational w.r.t. rack
+        - steering shaft (revolute): fixed to pinion and rotates w.r.t. chassis
+        - intermediate shaft (universal): with respect to steering shaft
+        - steering column (universal):
+    */
+
     auto scale = Vec3(1.0, 1.0, 1.0) / 1000.0;
 
     // Take the tierod inner location as the end point of the steering rack
@@ -129,6 +160,63 @@ MobilizedBody CreateSteeringRack(JSON hardpoints, MobilizedBody &chassis_body)
 
     // A slider is defined along the common X-axis, redirect it along the steering axis
     auto steering_rack = MobilizedBody::Slider(chassis_body, Transform(FromDirectionVector(steering_rack_dir, XAxis), PosWorldToBody(chassis_body, steering_rack_pos)), steeringRackInfo, Transform(Vec3(0)));
+
+    // Get steering shaft and column coordinates
+    auto pinion_center_at_rack = GetVec3(hardpoints["pinion_center_at_rack"], scale);
+    auto intermediate_shaft_forward = GetVec3(hardpoints["intermediate_shaft_forward"], scale); // don't care for now...
+    auto intermediate_shaft_rear = GetVec3(hardpoints["intermediate_shaft_rear"], scale);
+    auto steeringwheel_center = GetVec3(hardpoints["steeringwheel_center"], scale);
+
+    auto seering_column_dir = steeringwheel_center - intermediate_shaft_rear;
+
+    auto intermediate_shaft_dir = intermediate_shaft_rear - pinion_center_at_rack;
+    auto steering_shaft_len = intermediate_shaft_dir.norm();
+    auto intermediate_shaft_center = (intermediate_shaft_rear + pinion_center_at_rack) / 2.0;
+
+    // Calculate virtual contact point to achieve desired steering ration
+    auto steering_rack_ratio = 0.0024; // [rev/mm]
+    auto effective_pinion_radius = (1.0 / steering_rack_ratio) * 1.0 / (2.0 * Pi) / 1000.0;
+    auto pinion_virtual_contact_pos = pinion_center_at_rack + effective_pinion_radius * UnitVec3(steering_rack_pos - pinion_center_at_rack);
+
+    // Steering shaft properties
+    Body::Rigid pinionInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.01)));
+    pinionInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, steering_shaft_len / 2.0));
+
+    // Rack pinion constraint, ideally we use a mobilizer here, but the mobilizer we need is not available OOTB
+    // ISSUE #753 https://github.com/simbody/simbody/issues/753
+
+    // Attach a revolute mobilizer to the chassis, this will assure a rotational degree of freedom of the ARB w.r.t. the chassis
+    auto steering_shaft = MobilizedBody::Revolute(chassis_body, Transform(FromDirectionVector(intermediate_shaft_dir, ZAxis), PosWorldToBody(chassis_body, intermediate_shaft_center)), pinionInfo, Transform());
+
+    // std::cout << TransformWorldToBody(chassis_body, intermediate_shaft_center, intermediate_shaft_dir, ZAxis) << std::endl;
+    // std::cout << "ALT TRANS:" << std::endl;
+    // std::cout << Transform(FromDirectionVector(intermediate_shaft_dir, ZAxis), PosWorldToBody(chassis_body, intermediate_shaft_center)) << std::endl;
+
+    auto steering_shaft2 = MobilizedBody::Revolute(steering_shaft, TransformWorldToBody(steering_shaft, intermediate_shaft_rear, intermediate_shaft_dir, ZAxis), pinionInfo, TransformWorldToBody(steering_shaft, intermediate_shaft_rear, -seering_column_dir, ZAxis));
+
+    // Add a no slip 1d constraints to constrain the rotation, we need to use the virtual contact position here to get the correct steering ratio
+    // Constraint::NoSlip1D(steering_rack, PosWorldToBody(steering_rack, pinion_virtual_contact_pos), UnitVec3(steering_rack_dir), steering_rack, steering_shaft);
+    Constraint::NoSlip1D(chassis_body, PosWorldToBody(chassis_body, pinion_virtual_contact_pos), UnitVec3(steering_rack_dir), steering_rack, steering_shaft);
+
+    // This calculation needs to be improved:
+    // - We should first find the perpendicular distance between the rack axis and the steering rod axis
+
+    // Steering column body (can incoorporate the steering wheel here if desired)
+    // Need to decide whether we really want this or whether a physical interface is already available (i.e. driving simulator)
+    // ...
+    // Body::Rigid steeringColumInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.01)));
+    // steeringColumInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, steering_shaft_len / 2.0));
+
+    // MobilizedBody::Universal(steering_shaft, Transform(PosWorldToBody(steering_shaft, intermediate_shaft_rear)), steeringColumInfo, Transform(Vec3(steering_shaft_len, 0.0, 0.0)));
+    // MobilizedBody::Universal(steering_shaft, Transform(PosWorldToBody(steering_shaft, intermediate_shaft_rear)), steeringColumInfo, Transform(PosWorldToBody(steering_shaft, intermediate_shaft_rear)));
+
+    // Debugging steering ratio calculations
+    /*
+    auto geometric_pinion_radius = (pinion_center_at_rack - steering_rack_pos).norm();
+    std::cout << geometric_pinion_radius * 1000.0 << std::endl;
+    std::cout << effective_pinion_radius * 1000.0 << std::endl;
+    std::cout << (pinion_center_at_rack - pinion_virtual_contact_pos).norm() * 1000.0 << std::endl;
+    */
 
     return steering_rack;
 }
@@ -338,7 +426,7 @@ int main()
 
     vehicle.chassis.body = MobilizedBody::Weld(matter.Ground(), Transform(chassis_pos), bodyInfo, Transform(Vec3(0)));
 
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 2; i++)
     {
         bool left = i == 0 || i == 2;
         JSON hardpoints = i < 2 ? data["front"] : data["rear"];
@@ -366,7 +454,7 @@ int main()
     }
 
     bool skip_viz = false;
-    bool test_model = false;
+    bool test_model = true;
 
     auto t_end = 20.0;
 

@@ -38,7 +38,7 @@ Transform GetGlobalTransform(MobilizedBody body)
     auto transform = Transform(Vec3(0));
     while (true)
     {
-        transform = (body.getDefaultInboardFrame() * body.getDefaultOutboardFrame()) * transform;
+        transform = (body.getDefaultInboardFrame() * body.getDefaultOutboardFrame().invert()) * transform;
         auto parent_body = body.getParentMobilizedBody();
 
         if (parent_body.isSameMobilizedBody(body) || parent_body.isGround())

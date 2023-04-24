@@ -74,6 +74,10 @@ MobilizedBody CreateSteeringRack(JSON hardpoints, MobilizedBody &chassis_body)
 
         This part is not yet quite right, we don't have accurate placement of the joint locations
         and we are missing the revolute joint to fixate the steering colum to the chassis.
+
+        TODO:
+        - [ ] Add revolute joint to attach steering column to chassis
+        - [ ] Correct the rack pinion location (should be perpendicular between the rack axis and steering shaft axis)
     */
 
     auto scale = Vec3(1.0, 1.0, 1.0) / 1000.0;
@@ -102,62 +106,48 @@ MobilizedBody CreateSteeringRack(JSON hardpoints, MobilizedBody &chassis_body)
 
     auto seering_column_dir = steeringwheel_center - intermediate_shaft_rear;
 
-    auto intermediate_shaft_dir = intermediate_shaft_rear - pinion_center_at_rack;
-    auto steering_shaft_len = intermediate_shaft_dir.norm();
-    auto intermediate_shaft_center = (intermediate_shaft_rear + pinion_center_at_rack) / 2.0;
-
     // Calculate virtual contact point to achieve desired steering ration
     auto steering_rack_ratio = 0.0024; // [rev/mm]
     auto effective_pinion_radius = (1.0 / steering_rack_ratio) * 1.0 / (2.0 * Pi) / 1000.0;
     auto pinion_virtual_contact_pos = pinion_center_at_rack + effective_pinion_radius * UnitVec3(steering_rack_pos - pinion_center_at_rack);
 
-    // Rack pinion constraint, ideally we use a mobilizer here, but the mobilizer we need is not available OOTB
-    // ISSUE #753 https://github.com/simbody/simbody/issues/753
-
-    // Attach a revolute mobilizer to the chassis, this will assure a rotational degree of freedom of the ARB w.r.t. the chassis
-
-    if (false) // This would be a simplified approach, simply ignoring the upper column
-    {
-        // Steering shaft properties
-        Body::Rigid pinionInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.01)));
-        pinionInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, steering_shaft_len / 2.0));
-        auto steering_shaft = MobilizedBody::Revolute(chassis_body, TransformWorldToBody(chassis_body, intermediate_shaft_center, intermediate_shaft_dir, ZAxis), pinionInfo, Transform());
-    }
-
     // Steering shaft and column mobilizers
     // All joints are defined at the base for convenience (expressed in world frame coordinates converted to body local)
 
-    // Lower steering shaft
-    auto pos = pinion_center_at_rack;
-    auto dir = intermediate_shaft_forward - pinion_center_at_rack;
-    auto len = dir.norm();
+    // Steering shaft
+    auto steering_shaft_dir = intermediate_shaft_forward - pinion_center_at_rack;
+    auto steering_shaft_len = steering_shaft_dir.norm();
 
     Body::Rigid steeringShaftInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.01)));
-    steeringShaftInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, len / 2.0));
+    steeringShaftInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, steering_shaft_len / 2.0));
 
-    auto steering_shaft = MobilizedBody::Universal(chassis_body, TransformWorldToBody(chassis_body, pos, dir, ZAxis), steeringShaftInfo, Transform(Vec3(0.0, 0.0, -len / 2))); // Transform(Rotation().setRotationFromOneAxis(UnitVec3(dir), ZAxis)));
+    auto steering_shaft = MobilizedBody::Revolute(chassis_body, TransformWorldToBody(chassis_body, pinion_center_at_rack, steering_shaft_dir, ZAxis), steeringShaftInfo, Transform(Vec3(0.0, 0.0, -steering_shaft_len / 2.0)));
 
-    pos = intermediate_shaft_forward;
-    dir = intermediate_shaft_rear - intermediate_shaft_forward;
-    len = dir.norm();
-
-    Body::Rigid intermediateShaftInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.01)));
-    intermediateShaftInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, len / 2.0));
-
-    auto intermediate_shaft = MobilizedBody::Universal(steering_shaft, TransformWorldToBody(steering_shaft, pos, dir, ZAxis), intermediateShaftInfo, Transform(Vec3(0.0, 0.0, len / 2)));
-
-    pos = intermediate_shaft_rear;
-    dir = steeringwheel_center - intermediate_shaft_rear;
-    len = dir.norm();
-
-    Body::Rigid steeringColumnInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.01)));
-    steeringColumnInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, len / 2.0));
-
-    auto steering_column = MobilizedBody::Revolute(intermediate_shaft, TransformWorldToBody(intermediate_shaft, pos, dir, ZAxis), steeringColumnInfo, Transform(Vec3(0.0, 0.0, -len / 2)));
+    // Rack pinion constraint, ideally we use a mobilizer here, but the mobilizer we need is not available OOTB
+    // ISSUE #753 https://github.com/simbody/simbody/issues/753
+    // Attach a revolute mobilizer to the chassis, this will assure a rotational degree of freedom of the ARB w.r.t. the chassis
 
     // Add a no slip 1d constraints to constrain the rotation, we need to use the virtual contact position here to get the correct steering ratio
     // Constraint::NoSlip1D(steering_rack, PosWorldToBody(steering_rack, pinion_virtual_contact_pos), UnitVec3(steering_rack_dir), steering_rack, steering_shaft);
     Constraint::NoSlip1D(chassis_body, PosWorldToBody(chassis_body, pinion_virtual_contact_pos), UnitVec3(steering_rack_dir), steering_rack, steering_shaft);
+
+    // Intermediate shaft
+    auto intermediate_shaft_dir = intermediate_shaft_rear - intermediate_shaft_forward;
+    auto intermediate_shaft_len = intermediate_shaft_dir.norm();
+
+    Body::Rigid intermediateShaftInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.01)));
+    intermediateShaftInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, intermediate_shaft_len / 2.0));
+
+    auto intermediate_shaft = MobilizedBody::Universal(steering_shaft, TransformWorldToBody(steering_shaft, intermediate_shaft_forward, intermediate_shaft_dir, ZAxis), intermediateShaftInfo, Transform(Vec3(0.0, 0.0, -intermediate_shaft_len / 2.0)));
+
+    // Steering column
+    auto steering_columm_dir = steeringwheel_center - intermediate_shaft_rear;
+    auto steering_column_len = steering_columm_dir.norm();
+
+    Body::Rigid steeringColumnInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.01)));
+    steeringColumnInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, steering_column_len / 2.0));
+
+    auto steering_column = MobilizedBody::Universal(intermediate_shaft, TransformWorldToBody(intermediate_shaft, intermediate_shaft_rear, steering_columm_dir, ZAxis), steeringColumnInfo, Transform(Vec3(0.0, 0.0, -steering_column_len / 2.0)));
 
     return steering_rack;
 }

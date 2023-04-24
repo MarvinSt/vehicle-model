@@ -1,5 +1,6 @@
 #include "Simbody.h"
 #include "json.hpp"
+#include "utils.hpp"
 
 #include <string>
 #include <fstream>
@@ -35,6 +36,7 @@ struct Vehicle
     Upright upright[4];
     MobilizedBody rocker[4];
     MobilizedBody steering_rack;
+    MobilizedBody steering_column;
 };
 
 struct Suspension
@@ -42,76 +44,21 @@ struct Suspension
     MobilizedBody rocker;
 };
 
-Vec3 GetVec3(JSON data, Vec3 scale = Vec3(1.0, 1.0, 1.0))
+MobilizedBody CreateSteeringSystem(JSON hardpoints, MobilizedBody &chassis_body)
 {
-    return Vec3(data[0].ToFloat(), data[1].ToFloat(), data[2].ToFloat()).elementwiseMultiply(scale);
-}
+    /*
+        The steering system consists of:
+        - steering rack (slider): lateral w.r.t. chassis
+        - pinion (1d velocity constraint): translation to rotational w.r.t. rack
+        - steering shaft (revolute): fixed to pinion and rotates w.r.t. chassis
+        - intermediate shaft (universal): with respect to steering shaft
+        - steering column (universal):
 
-Vec3 FlipAxis(Vec3 in, int axis)
-{
-    in[axis] = -in[axis];
-    return in;
-}
+        This part is not really ideal in terms of computational efficiency.
+        It probaby makes sense to model up to the rack mounted revolute joint and
+        lump the rest of the steering system inertia/mass alltogether in a single shaft.
+    */
 
-Rotation RotationFromDirection(Vec3 direction = Vec3(0.0, 0.0, 1.0), CoordinateAxis axis = ZAxis)
-{
-    return Rotation().setRotationFromOneAxis(UnitVec3(direction), axis);
-}
-
-Transform GetGlobalTransform(MobilizedBody body)
-{
-    auto transform = Transform(Vec3(0));
-    while (true)
-    {
-        transform = (body.getDefaultInboardFrame()) * transform;
-        auto parent_body = body.getParentMobilizedBody();
-
-        if (parent_body.isSameMobilizedBody(body) || parent_body.isGround())
-            break;
-
-        body = parent_body;
-    }
-    return transform;
-}
-
-Vec3 PosWorldToBody(MobilizedBody body, Vec3 position)
-{
-    auto transform = GetGlobalTransform(body);
-    return (transform.invert() * Transform(position)).p();
-}
-
-Vec3 PosBodyToWorld(MobilizedBody body, Vec3 position)
-{
-    auto transform = GetGlobalTransform(body);
-    return (transform * Transform(position)).p();
-}
-
-Rotation FromDirectionVector(Vec3 direction, CoordinateAxis axis = ZAxis)
-{
-    return Rotation().setRotationFromOneAxis(UnitVec3(direction), axis);
-}
-
-Constraint CreateLink(MobilizedBody &chassis_body, Vec3 chassis_link_pos, MobilizedBody &upright_body, Vec3 upright_link_pos, int variant = 1)
-{
-    Constraint cons;
-
-    auto dist = (chassis_link_pos - upright_link_pos).norm();
-
-    switch (variant)
-    {
-    case 0:
-        cons = Constraint::SphereOnSphereContact(chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), dist / 2.0, upright_body, PosWorldToBody(upright_body, upright_link_pos), dist / 2.0, false);
-        break;
-    case 1:
-        cons = Constraint::Rod(chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), upright_body, PosWorldToBody(upright_body, upright_link_pos), dist);
-        break;
-    }
-
-    return cons;
-}
-
-MobilizedBody CreateSteeringRack(JSON hardpoints, MobilizedBody &chassis_body)
-{
     auto scale = Vec3(1.0, 1.0, 1.0) / 1000.0;
 
     // Take the tierod inner location as the end point of the steering rack
@@ -130,6 +77,65 @@ MobilizedBody CreateSteeringRack(JSON hardpoints, MobilizedBody &chassis_body)
     // A slider is defined along the common X-axis, redirect it along the steering axis
     auto steering_rack = MobilizedBody::Slider(chassis_body, Transform(FromDirectionVector(steering_rack_dir, XAxis), PosWorldToBody(chassis_body, steering_rack_pos)), steeringRackInfo, Transform(Vec3(0)));
 
+    // Get steering shaft and column coordinates
+    auto pinion_center_at_rack = GetVec3(hardpoints["pinion_center_at_rack"], scale);
+    auto intermediate_shaft_forward = GetVec3(hardpoints["intermediate_shaft_forward"], scale);
+    auto intermediate_shaft_rear = GetVec3(hardpoints["intermediate_shaft_rear"], scale);
+    auto steeringwheel_center = GetVec3(hardpoints["steeringwheel_center"], scale);
+
+    auto seering_column_dir = steeringwheel_center - intermediate_shaft_rear;
+
+    // Calculate virtual contact point to achieve desired steering ration
+    auto steering_rack_ratio = 0.0024; // [rev/mm]
+    auto effective_pinion_radius = (1.0 / steering_rack_ratio) * 1.0 / (2.0 * Pi) / 1000.0;
+
+    // Steering shaft and column mobilizers
+    // All joints are defined at the base for convenience (expressed in world frame coordinates converted to body local)
+
+    // Steering shaft
+    auto steering_shaft_dir = intermediate_shaft_forward - pinion_center_at_rack;
+    auto steering_shaft_len = steering_shaft_dir.norm();
+
+    Body::Rigid steeringShaftInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.01)));
+    steeringShaftInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, steering_shaft_len / 2.0));
+
+    auto steering_shaft = MobilizedBody::Revolute(chassis_body, TransformWorldToBody(chassis_body, pinion_center_at_rack, steering_shaft_dir, ZAxis), steeringShaftInfo, Transform(Vec3(0.0, 0.0, -steering_shaft_len / 2.0)));
+
+    // Project a point at the center of the steering rack onto the steering shaft to find the virtual perpendicular contact point
+    auto pinion_virtual_cen = ProjectPointOnLine(steering_rack_pos, pinion_center_at_rack, intermediate_shaft_forward);
+    auto pinion_virtual_contact_dir = steering_rack_pos - pinion_virtual_cen;
+    // auto pinion_virtual_contact_pos = UnitVec3(pinion_virtual_contact_dir) * effective_pinion_radius + pinion_virtual_cen;
+    auto pinion_virtual_contact_pos = UnitVec3(pinion_virtual_contact_dir) * effective_pinion_radius + pinion_center_at_rack;
+
+    // Add a no slip 1d constraints to constrain the rotation, we need to use the virtual contact position here to get the correct steering ratio
+    Constraint::NoSlip1D(chassis_body, PosWorldToBody(chassis_body, pinion_virtual_contact_pos), UnitVec3(steering_rack_dir), steering_rack, steering_shaft);
+
+    // Intermediate shaft
+    auto intermediate_shaft_dir = intermediate_shaft_rear - intermediate_shaft_forward;
+    auto intermediate_shaft_len = intermediate_shaft_dir.norm();
+
+    Body::Rigid intermediateShaftInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.01)));
+    intermediateShaftInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, intermediate_shaft_len / 2.0));
+
+    auto intermediate_shaft = MobilizedBody::Universal(steering_shaft, TransformWorldToBody(steering_shaft, intermediate_shaft_forward, intermediate_shaft_dir, ZAxis), intermediateShaftInfo, Transform(Vec3(0.0, 0.0, -intermediate_shaft_len / 2.0)));
+
+    // Steering column
+    auto steering_columm_dir = steeringwheel_center - intermediate_shaft_rear;
+    auto steering_column_len = steering_columm_dir.norm();
+
+    // Split the body mass and inertia in half, because we need both a chassis mounted and intermediate shaft mounted part which are welded together
+    Body::Rigid steeringColumnInfo(MassProperties(1.0 / 2.0, Vec3(0), UnitInertia(0.01) / 2.0));
+    auto steering_column = MobilizedBody::Universal(intermediate_shaft, TransformWorldToBody(intermediate_shaft, intermediate_shaft_rear, steering_columm_dir, ZAxis), steeringColumnInfo, Transform(Vec3(0.0, 0.0, -steering_column_len / 2.0)));
+    steeringColumnInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, steering_column_len / 2.0));
+    steeringColumnInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0, 0.0, steering_column_len / 2.0)), DecorativeBrick(Vec3(0.125, 0.025, 0.05)));
+    auto steering_column_cha = MobilizedBody::Revolute(chassis_body, TransformWorldToBody(chassis_body, intermediate_shaft_rear, steering_columm_dir, ZAxis), steeringColumnInfo, Transform(Vec3(0.0, 0.0, -steering_column_len / 2.0)));
+
+    // Weld revolute chassis mounted joint to steering column
+    Constraint::Weld(steering_column_cha, steering_column);
+
+    // Apply motion
+    Motion::Sinusoid(steering_column_cha, Motion::Level::Position, 20.0 * Pi / 180.0, 2.0 * 2.0 * Pi, 0.0);
+
     return steering_rack;
 }
 
@@ -142,10 +148,6 @@ void CreateAntiRollbar(JSON hardpoints, GeneralForceSubsystem &forces, Mobilized
     Body::Rigid arbInfo(MassProperties(0.1, Vec3(0), UnitInertia(0.1)));
 
     auto scale = Vec3(1.0, 1.0, 1.0) / 1000.0;
-
-    auto chassis_frame = chassis_body.getDefaultInboardFrame();
-
-    Vec3 chassis_pos = chassis_frame.p();
 
     auto arb_bend = GetVec3(hardpoints["arb_bend"], scale);
     auto arb_middle = Vec3(arb_bend[0], 0.0, arb_bend[2]);
@@ -305,15 +307,6 @@ MobilizedBody CreateRocker(MultibodySystem &system, JSON hardpoints, GeneralForc
     return rocker;
 }
 
-JSON LoadParameters(std::string filename)
-{
-    std::ifstream f(filename);
-    std::stringstream buffer;
-    buffer << f.rdbuf();
-    f.close();
-    return JSON::Load(buffer.str());
-}
-
 int main()
 {
     // Define the system.
@@ -346,7 +339,7 @@ int main()
         if (i == 0)
         {
             // Generate steering rack
-            vehicle.steering_rack = CreateSteeringRack(hardpoints, vehicle.chassis.body);
+            vehicle.steering_rack = CreateSteeringSystem(hardpoints, vehicle.chassis.body);
         }
 
         vehicle.upright[i] = CreateUpright(hardpoints, vehicle.chassis.body, left);

@@ -1,4 +1,5 @@
 {
+
     "front": {
         "arblink_to_bellcrank": [867.73, 144.96, 439.29],
         "arb_bushing_mount": [1000.0, 100.00, 80.0],
@@ -20,7 +21,11 @@
         "arb_middle": [1016.00, 0.0, 304.80],
         "arb_bend": [1016.00, 139.70, 304.80],
         "arb_bushing": [1016.00, 114.30, 304.80],
-        "droplink_to_arb": [1016.00, 114.30, 304.80]
+        "droplink_to_arb": [1016.00, 114.30, 304.80],
+        "intermediate_shaft_forward": [1069.90, 0.0, 263.08],
+        "intermediate_shaft_rear": [1149.33, 0.0, 370.55],
+        "pinion_center_at_rack": [990.46, 0.0, 155.61],
+        "steeringwheel_center": [1390.48, 0.0, 450.62]
     },
     "rear": {
         "arblink_to_bellcrank": [2984.50, 139.70, 342.90],

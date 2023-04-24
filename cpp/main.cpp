@@ -59,6 +59,8 @@ MobilizedBody CreateSteeringSystem(JSON hardpoints, MobilizedBody &chassis_body)
         lump the rest of the steering system inertia/mass alltogether in a single shaft.
     */
 
+    auto steering_simplified = true;
+
     auto scale = Vec3(1.0, 1.0, 1.0) / 1000.0;
 
     // Take the tierod inner location as the end point of the steering rack
@@ -109,6 +111,14 @@ MobilizedBody CreateSteeringSystem(JSON hardpoints, MobilizedBody &chassis_body)
 
     // Add a no slip 1d constraints to constrain the rotation, we need to use the virtual contact position here to get the correct steering ratio
     Constraint::NoSlip1D(chassis_body, PosWorldToBody(chassis_body, pinion_virtual_contact_pos), UnitVec3(steering_rack_dir), steering_rack, steering_shaft);
+
+    if (steering_simplified)
+    {
+        // Apply motion
+        Motion::Sinusoid(steering_shaft, Motion::Level::Position, 20.0 * Pi / 180.0, 2.0 * 2.0 * Pi, 0.0);
+
+        return steering_rack;
+    }
 
     // Intermediate shaft
     auto intermediate_shaft_dir = intermediate_shaft_rear - intermediate_shaft_forward;
@@ -358,7 +368,7 @@ int main()
         }
     }
 
-    bool skip_viz = false;
+    bool skip_viz = true;
     bool test_model = false;
 
     auto t_end = 20.0;

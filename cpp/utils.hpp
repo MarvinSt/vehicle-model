@@ -77,11 +77,8 @@ Transform TransformWorldToBody(MobilizedBody body, Vec3 position, Vec3 direction
 
     // calculate the original direction vector
     auto orig_direction = position - transform.p();
-
-    std::cout << transform.p() << std::endl;
-
+    // std::cout << transform.p() << std::endl;
     auto rotation = Rotation().setRotationFromTwoAxes(UnitVec3(direction), axis, UnitVec3(orig_direction), axis); // Rotation().setRotationFromOneAxis(UnitVec3(direction), axis);
-
     auto trans = (transform.invert() * Transform(rotation.invert(), position));
     return trans;
 }

@@ -36,6 +36,7 @@ struct Vehicle
     Upright upright[4];
     MobilizedBody rocker[4];
     MobilizedBody steering_rack;
+    MobilizedBody steering_column;
 };
 
 struct Suspension
@@ -43,49 +44,7 @@ struct Suspension
     MobilizedBody rocker;
 };
 
-Constraint CreateLink(MobilizedBody &chassis_body, Vec3 chassis_link_pos, MobilizedBody &upright_body, Vec3 upright_link_pos, int variant = 1)
-{
-    Constraint cons;
-
-    auto dist = (chassis_link_pos - upright_link_pos).norm();
-
-    switch (variant)
-    {
-    case 0:
-        cons = Constraint::SphereOnSphereContact(chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), dist / 2.0, upright_body, PosWorldToBody(upright_body, upright_link_pos), dist / 2.0, false);
-        break;
-    case 1:
-        cons = Constraint::Rod(chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), upright_body, PosWorldToBody(upright_body, upright_link_pos), dist);
-        break;
-    }
-
-    return cons;
-}
-
-class LinearFunction : public Function
-{
-public:
-    Real calcValue(const Vector &x) const override
-    {
-        return x[0];
-    }
-    Real calcDerivative(const Array_<int> &derivComponents, const Vector &x) const override
-    {
-        if (derivComponents.size() == 1)
-            return 1;
-        return 0;
-    }
-    int getArgumentSize() const override
-    {
-        return 1;
-    }
-    int getMaxDerivativeOrder() const override
-    {
-        return 100;
-    }
-};
-
-MobilizedBody CreateSteeringRack(JSON hardpoints, MobilizedBody &chassis_body)
+MobilizedBody CreateSteeringSystem(JSON hardpoints, MobilizedBody &chassis_body)
 {
     /*
         The steering system consists of:
@@ -96,14 +55,8 @@ MobilizedBody CreateSteeringRack(JSON hardpoints, MobilizedBody &chassis_body)
         - steering column (universal):
 
         This part is not really ideal in terms of computational efficiency.
-        There is no rack pinion mobilizer out of the box and we need an additional
-        weld constraint to mount the steering column revolute joint to the chassis.
         It probaby makes sense to model up to the rack mounted revolute joint and
-        lump the rest of the steering system together.
-
-        TODO:
-        - [x] Add revolute joint to attach steering column to chassis
-        - [x] Correct the rack pinion location (should be perpendicular between the rack axis and steering shaft axis)
+        lump the rest of the steering system inertia/mass alltogether in a single shaft.
     */
 
     auto scale = Vec3(1.0, 1.0, 1.0) / 1000.0;
@@ -135,7 +88,6 @@ MobilizedBody CreateSteeringRack(JSON hardpoints, MobilizedBody &chassis_body)
     // Calculate virtual contact point to achieve desired steering ration
     auto steering_rack_ratio = 0.0024; // [rev/mm]
     auto effective_pinion_radius = (1.0 / steering_rack_ratio) * 1.0 / (2.0 * Pi) / 1000.0;
-    auto pinion_virtual_contact_pos = pinion_center_at_rack + effective_pinion_radius * UnitVec3(steering_rack_pos - pinion_center_at_rack);
 
     // Steering shaft and column mobilizers
     // All joints are defined at the base for convenience (expressed in world frame coordinates converted to body local)
@@ -149,12 +101,13 @@ MobilizedBody CreateSteeringRack(JSON hardpoints, MobilizedBody &chassis_body)
 
     auto steering_shaft = MobilizedBody::Revolute(chassis_body, TransformWorldToBody(chassis_body, pinion_center_at_rack, steering_shaft_dir, ZAxis), steeringShaftInfo, Transform(Vec3(0.0, 0.0, -steering_shaft_len / 2.0)));
 
-    // Rack pinion constraint, ideally we use a mobilizer here, but the mobilizer we need is not available OOTB
-    // ISSUE #753 https://github.com/simbody/simbody/issues/753
-    // Attach a revolute mobilizer to the chassis, this will assure a rotational degree of freedom of the ARB w.r.t. the chassis
+    // Project a point at the center of the steering rack onto the steering shaft to find the virtual perpendicular contact point
+    auto pinion_virtual_cen = ProjectPointOnLine(steering_rack_pos, pinion_center_at_rack, intermediate_shaft_forward);
+    auto pinion_virtual_contact_dir = steering_rack_pos - pinion_virtual_cen;
+    // auto pinion_virtual_contact_pos = UnitVec3(pinion_virtual_contact_dir) * effective_pinion_radius + pinion_virtual_cen;
+    auto pinion_virtual_contact_pos = UnitVec3(pinion_virtual_contact_dir) * effective_pinion_radius + pinion_center_at_rack;
 
     // Add a no slip 1d constraints to constrain the rotation, we need to use the virtual contact position here to get the correct steering ratio
-    // Constraint::NoSlip1D(steering_rack, PosWorldToBody(steering_rack, pinion_virtual_contact_pos), UnitVec3(steering_rack_dir), steering_rack, steering_shaft);
     Constraint::NoSlip1D(chassis_body, PosWorldToBody(chassis_body, pinion_virtual_contact_pos), UnitVec3(steering_rack_dir), steering_rack, steering_shaft);
 
     // Intermediate shaft
@@ -179,6 +132,9 @@ MobilizedBody CreateSteeringRack(JSON hardpoints, MobilizedBody &chassis_body)
 
     // Weld revolute chassis mounted joint to steering column
     Constraint::Weld(steering_column_cha, steering_column);
+
+    // Apply motion
+    Motion::Sinusoid(steering_column_cha, Motion::Level::Position, 20.0 * Pi / 180.0, 2.0 * 2.0 * Pi, 0.0);
 
     return steering_rack;
 }
@@ -383,7 +339,7 @@ int main()
         if (i == 0)
         {
             // Generate steering rack
-            vehicle.steering_rack = CreateSteeringRack(hardpoints, vehicle.chassis.body);
+            vehicle.steering_rack = CreateSteeringSystem(hardpoints, vehicle.chassis.body);
         }
 
         vehicle.upright[i] = CreateUpright(hardpoints, vehicle.chassis.body, left);

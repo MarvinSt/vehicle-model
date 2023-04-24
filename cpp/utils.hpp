@@ -85,3 +85,31 @@ Transform TransformWorldToBody(MobilizedBody body, Vec3 position, Vec3 direction
     auto trans = (transform.invert() * Transform(rotation.invert(), position));
     return trans;
 }
+
+Vec3 ProjectPointOnLine(Vec3 point, Vec3 line_a, Vec3 line_b)
+{
+    auto ab = line_b - line_a;
+    auto ap = point - line_a;
+
+    auto t = ab.elementwiseMultiply(ap).sum() / ab.elementwiseMultiply(ab).sum();
+    return line_a + t * ab;
+}
+
+Constraint CreateLink(MobilizedBody &chassis_body, Vec3 chassis_link_pos, MobilizedBody &upright_body, Vec3 upright_link_pos, int variant = 1)
+{
+    Constraint cons;
+
+    auto dist = (chassis_link_pos - upright_link_pos).norm();
+
+    switch (variant)
+    {
+    case 0:
+        cons = Constraint::SphereOnSphereContact(chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), dist / 2.0, upright_body, PosWorldToBody(upright_body, upright_link_pos), dist / 2.0, false);
+        break;
+    case 1:
+        cons = Constraint::Rod(chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), upright_body, PosWorldToBody(upright_body, upright_link_pos), dist);
+        break;
+    }
+
+    return cons;
+}

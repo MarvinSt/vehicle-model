@@ -9,8 +9,8 @@ Vehicle chassis model developed using [Simbody](https://github.com/simbody/simbo
 ## Open Tasks
 
 - [ ] Implement chassis and body mass / inertia parameters and load these from JSON files
-- [ ] Steering mechanism kinematics
-- [ ] Anti-rollbar has no stiffness at the moment
+- [x] Steering mechanism kinematics
+- [ ] Anti-rollbar has no torsional stiffness at the moment
 - [ ] Wheel colliders and ground plane, so that the model can be dropped on the ground
 - [ ] Non-linear spring/damper characteristics
     - [ ] Bump stops

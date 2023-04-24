@@ -62,6 +62,29 @@ Constraint CreateLink(MobilizedBody &chassis_body, Vec3 chassis_link_pos, Mobili
     return cons;
 }
 
+class LinearFunction : public Function
+{
+public:
+    Real calcValue(const Vector &x) const override
+    {
+        return x[0];
+    }
+    Real calcDerivative(const Array_<int> &derivComponents, const Vector &x) const override
+    {
+        if (derivComponents.size() == 1)
+            return 1;
+        return 0;
+    }
+    int getArgumentSize() const override
+    {
+        return 1;
+    }
+    int getMaxDerivativeOrder() const override
+    {
+        return 100;
+    }
+};
+
 MobilizedBody CreateSteeringRack(JSON hardpoints, MobilizedBody &chassis_body)
 {
     /*
@@ -72,12 +95,15 @@ MobilizedBody CreateSteeringRack(JSON hardpoints, MobilizedBody &chassis_body)
         - intermediate shaft (universal): with respect to steering shaft
         - steering column (universal):
 
-        This part is not yet quite right, we don't have accurate placement of the joint locations
-        and we are missing the revolute joint to fixate the steering colum to the chassis.
+        This part is not really ideal in terms of computational efficiency.
+        There is no rack pinion mobilizer out of the box and we need an additional
+        weld constraint to mount the steering column revolute joint to the chassis.
+        It probaby makes sense to model up to the rack mounted revolute joint and
+        lump the rest of the steering system together.
 
         TODO:
-        - [ ] Add revolute joint to attach steering column to chassis
-        - [ ] Correct the rack pinion location (should be perpendicular between the rack axis and steering shaft axis)
+        - [x] Add revolute joint to attach steering column to chassis
+        - [x] Correct the rack pinion location (should be perpendicular between the rack axis and steering shaft axis)
     */
 
     auto scale = Vec3(1.0, 1.0, 1.0) / 1000.0;
@@ -144,10 +170,15 @@ MobilizedBody CreateSteeringRack(JSON hardpoints, MobilizedBody &chassis_body)
     auto steering_columm_dir = steeringwheel_center - intermediate_shaft_rear;
     auto steering_column_len = steering_columm_dir.norm();
 
-    Body::Rigid steeringColumnInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.01)));
-    steeringColumnInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, steering_column_len / 2.0));
-
+    // Split the body mass and inertia in half, because we need both a chassis mounted and intermediate shaft mounted part which are welded together
+    Body::Rigid steeringColumnInfo(MassProperties(1.0 / 2.0, Vec3(0), UnitInertia(0.01) / 2.0));
     auto steering_column = MobilizedBody::Universal(intermediate_shaft, TransformWorldToBody(intermediate_shaft, intermediate_shaft_rear, steering_columm_dir, ZAxis), steeringColumnInfo, Transform(Vec3(0.0, 0.0, -steering_column_len / 2.0)));
+    steeringColumnInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, steering_column_len / 2.0));
+    steeringColumnInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0, 0.0, steering_column_len / 2.0)), DecorativeBrick(Vec3(0.125, 0.025, 0.05)));
+    auto steering_column_cha = MobilizedBody::Revolute(chassis_body, TransformWorldToBody(chassis_body, intermediate_shaft_rear, steering_columm_dir, ZAxis), steeringColumnInfo, Transform(Vec3(0.0, 0.0, -steering_column_len / 2.0)));
+
+    // Weld revolute chassis mounted joint to steering column
+    Constraint::Weld(steering_column_cha, steering_column);
 
     return steering_rack;
 }
@@ -372,7 +403,7 @@ int main()
     }
 
     bool skip_viz = false;
-    bool test_model = true;
+    bool test_model = false;
 
     auto t_end = 20.0;
 

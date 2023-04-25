@@ -18,9 +18,9 @@ System overview and reference frames (*[1] image source*)
 - [x] Wheel bodies
 - [ ] Anti-rollbar has no torsional stiffness at the moment
 - [ ] Wheel colliders and ground plane, so that the model can be dropped on the ground
-- [ ] Non-linear spring/damper characteristics
-    - [ ] Bump stops
-    - [ ] Damper characteristic tables
+- [x] Non-linear spring/damper characteristics
+    - [x] Bump stops
+    - [x] Damper characteristic tables
 - [ ] Tire force and ground contact model
 - [ ] Simple aerodynamics
 - [ ] Simple driveline model

@@ -1,5 +1,6 @@
 **.dSYM
 /cpp/main
+/cpp/springdamper
 .ipynb_checkpoints
 __pycache__
 *.sdf

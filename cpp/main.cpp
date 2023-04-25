@@ -2,6 +2,8 @@
 #include "json.hpp"
 #include "utils.hpp"
 
+#include "springdamper.hpp"
+
 #include <string>
 #include <fstream>
 
@@ -203,7 +205,26 @@ void CreateSpringDampersInboard(JSON hardpoints, GeneralForceSubsystem &forces, 
     // add the spring rest length
     x0 += dist;
 
-    Force::TwoPointLinearSpring(forces, chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), rocker_body, PosWorldToBody(rocker_body, rocker_link_pos), stiffness, x0);
+    // auto tabular_spring = TabularSpring(chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), rocker_body, PosWorldToBody(rocker_body, rocker_link_pos), stiffness, x0);
+    // tabular_spring.push_spring_table(0.0, 0.0);
+    // tabular_spring.push_spring_table(1.0, stiffness);
+
+    TabularSpring *tabular_spring = new TabularSpring(chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), rocker_body, PosWorldToBody(rocker_body, rocker_link_pos), x0);
+    tabular_spring->push_spring_table(0.0, 0.0);
+    tabular_spring->push_spring_table(1.0, stiffness);
+    const TabularSpring &tabular_spring_ref = *tabular_spring;
+    Force::Custom(forces, tabular_spring);
+
+    /*
+    // for debugging purposes
+    std::cout << "force val +1.0: " << tabular_spring->eval_force(x0 + 1.0) << std::endl;
+    std::cout << "force val  0.0: " << tabular_spring->eval_force(x0 + 0.0) << std::endl;
+    std::cout << "force val -1.0: " << tabular_spring->eval_force(x0 - 1.0) << std::endl;
+
+    std::cout << "tab size: " << tabular_spring->get_spring_table_size() << std::endl;
+    */
+
+    // Force::TwoPointLinearSpring(forces, chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), rocker_body, PosWorldToBody(rocker_body, rocker_link_pos), stiffness, x0);
     Force::TwoPointLinearDamper(forces, chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), rocker_body, PosWorldToBody(rocker_body, rocker_link_pos), damping);
 }
 

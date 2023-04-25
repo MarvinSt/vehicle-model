@@ -4,10 +4,9 @@
 
 #include "springdamper.hpp"
 
+#include <chrono>
 #include <string>
 #include <fstream>
-
-#include <chrono>
 
 using namespace std::chrono;
 
@@ -116,7 +115,7 @@ MobilizedBody CreateSteeringSystem(JSON hardpoints, MobilizedBody &chassis_body)
 
     if (steering_simplified)
     {
-        // Apply motion
+        // Induce artificial motion
         Motion::Sinusoid(steering_shaft, Motion::Level::Position, 20.0 * Pi / 180.0, 2.0 * 2.0 * Pi, 0.0);
 
         return steering_rack;
@@ -145,8 +144,8 @@ MobilizedBody CreateSteeringSystem(JSON hardpoints, MobilizedBody &chassis_body)
     // Weld revolute chassis mounted joint to steering column
     Constraint::Weld(steering_column_cha, steering_column);
 
-    // Apply motion
-    Motion::Sinusoid(steering_column_cha, Motion::Level::Position, 20.0 * Pi / 180.0, 2.0 * 2.0 * Pi, 0.0);
+    // Induce artificial motion
+    Motion::Sinusoid(steering_column_cha, Motion::Level::Position, 0.0 * Pi / 180.0, 2.0 * 2.0 * Pi, 0.0);
 
     return steering_rack;
 }
@@ -154,7 +153,7 @@ MobilizedBody CreateSteeringSystem(JSON hardpoints, MobilizedBody &chassis_body)
 void CreateAntiRollbar(JSON hardpoints, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, MobilizedBody &rocker_body_left, MobilizedBody &rocker_body_right)
 {
     // Define arb stiffness
-    auto torsional_stiffness = 1.00 * 1000.0 / 180.0 * Pi; // base unit N*mm/deg
+    auto torsional_stiffness = 100 * 1.00 * 1000.0 / 180.0 * Pi; // base unit N*mm/deg
 
     // Describe mass and visualization properties for a generic body.
     Body::Rigid arbInfo(MassProperties(0.1, Vec3(0), UnitInertia(0.1)));
@@ -170,20 +169,24 @@ void CreateAntiRollbar(JSON hardpoints, GeneralForceSubsystem &forces, Mobilized
 
     auto arb_rot_dir = arb_bend - arb_middle;
 
-    auto droplink_dist = (droplink_rocker - arb_droplink).norm();
-    arbInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), XAxis)), DecorativeCylinder(0.01, droplink_dist / 2.0));
+    auto arb_len = arb_rot_dir.norm() * 2.0;
+    arbInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), XAxis)), DecorativeCylinder(0.01, arb_len / 2.0));
 
     // Attach a revolute mobilizer to the chassis, this will assure a rotational degree of freedom of the ARB w.r.t. the chassis
     auto arb_body_left = MobilizedBody::Revolute(chassis_body, Transform(FromDirectionVector(arb_rot_dir, ZAxis), PosWorldToBody(chassis_body, arb_middle)), arbInfo, Transform());
 
     // Attach the right hand side body
-    auto arb_body_right = MobilizedBody::Revolute(chassis_body, Transform(FromDirectionVector(arb_rot_dir.elementwiseMultiply(Vec3(1.0, -1.0, 1.0)), ZAxis), PosWorldToBody(chassis_body, arb_middle)), arbInfo, Transform());
+    auto arb_body_right = MobilizedBody::Revolute(chassis_body, Transform(FromDirectionVector(arb_rot_dir.elementwiseMultiply(Vec3(1.0, 1.0, 1.0)), ZAxis), PosWorldToBody(chassis_body, arb_middle)), arbInfo, Transform());
 
     // Attach the droplink from the rocker body onto to the arb body
     CreateLink(arb_body_left, arb_droplink, rocker_body_left, droplink_rocker);
-    CreateLink(arb_body_left, arb_droplink.elementwiseMultiply(Vec3(1.0, -1.0, 1.0)), rocker_body_left, droplink_rocker.elementwiseMultiply(Vec3(1.0, -1.0, 1.0)));
+    CreateLink(arb_body_right, arb_droplink.elementwiseMultiply(Vec3(1.0, -1.0, 1.0)), rocker_body_right, droplink_rocker.elementwiseMultiply(Vec3(1.0, -1.0, 1.0)));
 
-    // TODO: Add stiffness between the bodies
+    // Induce artificial motion
+    Motion::Sinusoid(arb_body_left, Motion::Level::Position, 10.0 * Pi / 180.0, 4.0 * 2.0 * Pi, 0.0);
+
+    // Stiffness connecting the anti-rollbar bodies
+    Force::LinearBushing(forces, arb_body_left, arb_body_right, Vec6(1.0, 1.0, 1.0, 1.0, 1.0, 1.0) * torsional_stiffness, Vec6(1.0, 1.0, 1.0, 1.0, 1.0, 1.0) * torsional_stiffness * 1.0e-4);
 }
 
 void CreateSpringDampersInboard(JSON hardpoints, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, MobilizedBody &rocker_body, bool left = true)
@@ -206,7 +209,7 @@ void CreateSpringDampersInboard(JSON hardpoints, GeneralForceSubsystem &forces, 
     x0 += dist;
 
     // define tabular spring damper element
-    TabularSpringDamper *tabular_spring = new TabularSpringDamper(chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), rocker_body, PosWorldToBody(rocker_body, rocker_link_pos), x0);
+    ForceElement::TabularSpringDamper *tabular_spring = new ForceElement::TabularSpringDamper(chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), rocker_body, PosWorldToBody(rocker_body, rocker_link_pos), x0);
 
     tabular_spring->push_spring_table(-1.0, -stiffness);
     tabular_spring->push_spring_table(+1.0, +stiffness);
@@ -214,7 +217,7 @@ void CreateSpringDampersInboard(JSON hardpoints, GeneralForceSubsystem &forces, 
     tabular_spring->push_damper_table(-1.0, -damping);
     tabular_spring->push_damper_table(+1.0, +damping);
 
-    const TabularSpringDamper &tabular_spring_ref = *tabular_spring;
+    const ForceElement::TabularSpringDamper &tabular_spring_ref = *tabular_spring;
     Force::Custom(forces, tabular_spring);
 
     /*
@@ -275,7 +278,8 @@ Upright CreateUpright(JSON hardpoints, MobilizedBody &chassis_body, bool left = 
     upright.upright = MobilizedBody::Free(chassis_body, Transform(PosWorldToBody(chassis_body, wheel_center)), uprightInfo, Transform(Vec3(0)));
 
     // Attach the wheel mobilizer
-    MobilizedBody::Revolute(upright.upright, Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), ZAxis), PosWorldToBody(upright.upright, wheel_center)), wheelInfo, Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), ZAxis)));
+    // TODO: Include static toe and camber here
+    upright.spindle = MobilizedBody::Revolute(upright.upright, Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), ZAxis), PosWorldToBody(upright.upright, wheel_center)), wheelInfo, Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), ZAxis)));
 
     return upright;
 }

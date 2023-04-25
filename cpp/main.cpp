@@ -238,6 +238,9 @@ Upright CreateUpright(JSON hardpoints, MobilizedBody &chassis_body, bool left = 
     Body::Rigid uprightInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.1)));
     uprightInfo.addDecoration(Transform(), DecorativeSphere(0.025));
 
+    Body::Rigid wheelInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.1)));
+    wheelInfo.addDecoration(Transform(), DecorativeCylinder(0.25, 0.10));
+
     auto scale = Vec3(1.0, 1.0, 1.0) / 1000.0;
 
     if (!left)
@@ -246,6 +249,9 @@ Upright CreateUpright(JSON hardpoints, MobilizedBody &chassis_body, bool left = 
     Vec3 wheel_center = GetVec3(hardpoints["wheel_center"], scale);
 
     upright.upright = MobilizedBody::Free(chassis_body, Transform(PosWorldToBody(chassis_body, wheel_center)), uprightInfo, Transform(Vec3(0)));
+
+    // Attach the wheel mobilizer
+    MobilizedBody::Revolute(upright.upright, Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), ZAxis), PosWorldToBody(upright.upright, wheel_center)), wheelInfo, Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), ZAxis)));
 
     return upright;
 }
@@ -368,7 +374,7 @@ int main()
         }
     }
 
-    bool skip_viz = true;
+    bool skip_viz = false;
     bool test_model = false;
 
     auto t_end = 20.0;
@@ -387,9 +393,11 @@ int main()
 
     // Simulate for 20 seconds.
     // RungeKuttaMersonIntegrator integ(system);
-    RungeKutta3Integrator integ(system);
+    // RungeKutta3Integrator integ(system);
+    auto step_size = 1.0e-3;
+    SemiExplicitEulerIntegrator integ(system, step_size);
 
-    integ.setFixedStepSize(1.0e-3);
+    // integ.setFixedStepSize(step_size);
     TimeStepper ts(system, integ);
     ts.initialize(state);
 

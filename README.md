@@ -15,6 +15,7 @@ System overview and reference frames (*[1] image source*)
 
 - [ ] Implement chassis and body mass / inertia parameters and load these from JSON files
 - [x] Steering mechanism kinematics
+- [x] Wheel bodies
 - [ ] Anti-rollbar has no torsional stiffness at the moment
 - [ ] Wheel colliders and ground plane, so that the model can be dropped on the ground
 - [ ] Non-linear spring/damper characteristics

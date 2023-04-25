@@ -205,14 +205,16 @@ void CreateSpringDampersInboard(JSON hardpoints, GeneralForceSubsystem &forces, 
     // add the spring rest length
     x0 += dist;
 
-    // auto tabular_spring = TabularSpring(chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), rocker_body, PosWorldToBody(rocker_body, rocker_link_pos), stiffness, x0);
-    // tabular_spring.push_spring_table(0.0, 0.0);
-    // tabular_spring.push_spring_table(1.0, stiffness);
+    // define tabular spring damper element
+    TabularSpringDamper *tabular_spring = new TabularSpringDamper(chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), rocker_body, PosWorldToBody(rocker_body, rocker_link_pos), x0);
 
-    TabularSpring *tabular_spring = new TabularSpring(chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), rocker_body, PosWorldToBody(rocker_body, rocker_link_pos), x0);
-    tabular_spring->push_spring_table(0.0, 0.0);
-    tabular_spring->push_spring_table(1.0, stiffness);
-    const TabularSpring &tabular_spring_ref = *tabular_spring;
+    tabular_spring->push_spring_table(-1.0, -stiffness);
+    tabular_spring->push_spring_table(+1.0, +stiffness);
+
+    tabular_spring->push_damper_table(-1.0, -damping);
+    tabular_spring->push_damper_table(+1.0, +damping);
+
+    const TabularSpringDamper &tabular_spring_ref = *tabular_spring;
     Force::Custom(forces, tabular_spring);
 
     /*
@@ -224,8 +226,9 @@ void CreateSpringDampersInboard(JSON hardpoints, GeneralForceSubsystem &forces, 
     std::cout << "tab size: " << tabular_spring->get_spring_table_size() << std::endl;
     */
 
+    // Standard linear spring implementation
     // Force::TwoPointLinearSpring(forces, chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), rocker_body, PosWorldToBody(rocker_body, rocker_link_pos), stiffness, x0);
-    Force::TwoPointLinearDamper(forces, chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), rocker_body, PosWorldToBody(rocker_body, rocker_link_pos), damping);
+    // Force::TwoPointLinearDamper(forces, chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), rocker_body, PosWorldToBody(rocker_body, rocker_link_pos), damping);
 }
 
 void CreateSpringDampers(JSON hardpoints, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, MobilizedBody &upright_body, bool left = true)

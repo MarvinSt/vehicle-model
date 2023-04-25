@@ -36,6 +36,12 @@ public:
         return 0;
     }
 
+    int clear()
+    {
+        size = 0;
+        return 0;
+    }
+
     Real eval(Real index) const
     {
         if (size == 0)
@@ -88,6 +94,12 @@ public:
         return 0;
     }
 
+    int clear()
+    {
+        table.clear();
+        return 0;
+    }
+
     Real eval(Real index) const
     {
         if (table.size() == 0)
@@ -115,31 +127,52 @@ public:
     }
 };
 
-class TabularSpring : public Force::Custom::Implementation
+class TabularSpringDamper : public Force::Custom::Implementation
 {
 public:
-    TabularSpring(const MobilizedBody &body1, const Vec3 &station1,
-                  const MobilizedBody &body2, const Vec3 &station2, Real x0, Real f_0 = 0.0, Real x_bump = 1.0e9) // stiffness and damping
+    TabularSpringDamper(const MobilizedBody &body1, const Vec3 &station1,
+                        const MobilizedBody &body2, const Vec3 &station2, Real x0, Real f_0 = 0.0, Real x_bump = 1.0e9) // stiffness and damping
         : m_matter(body1.getMatterSubsystem()), m_body1(body1.getMobilizedBodyIndex()), m_station1(station1),
-          m_body2(body2.getMobilizedBodyIndex()), m_station2(station2), m_x0(x0), f_0(f_0), m_x_bump(x_bump)
+          m_body2(body2.getMobilizedBodyIndex()), m_station2(station2), m_x0(x0), m_f0(f_0), m_x_bump(x_bump)
     {
-        this->m_springforce = LookupTable1D();
+        this->m_spring = LookupTable1D();
         this->m_bumpstop = LookupTable1D(false, false);
+        this->m_damper = LookupTable1D();
     }
 
     void push_spring_table(Real disp, Real force)
     {
-        m_springforce.push_back(disp, force);
+        m_spring.push_back(disp, force);
     }
 
-    void set_freelength(Real x0)
+    void clear_spring_table()
     {
-        m_x0 = x0;
+        m_spring.clear();
     }
 
     void push_bumpstop_table(Real disp, Real force)
     {
         m_bumpstop.push_back(disp, force);
+    }
+
+    void clear_bumpstop_table()
+    {
+        m_bumpstop.clear();
+    }
+
+    void push_damper_table(Real velocity, Real force)
+    {
+        m_damper.push_back(velocity, force);
+    }
+
+    void clear_damper_table()
+    {
+        m_damper.clear();
+    }
+
+    void set_freelength(Real x0)
+    {
+        m_x0 = x0;
     }
 
     void set_bumpstop_gap(Real m_bumpstop)
@@ -149,17 +182,24 @@ public:
         m_x_bump = m_bumpstop;
     }
 
-    int get_spring_table_size()
+    void set_preload_force(Real f0)
     {
-        return m_springforce.get_size();
+        m_f0 = f0;
     }
 
-    Real eval_force(Real d) const
+    int get_spring_table_size()
+    {
+        return m_spring.get_size();
+    }
+
+    Real eval_force(Real d, Real v) const
     {
         Real stretch = d - m_x0;                               // + -> tension, - -> compression
-        auto frcSpring = m_springforce.eval(-(stretch));       // - -> tension, + -> compression
+        auto frcSpring = m_spring.eval(-(stretch));            // - -> tension, + -> compression
         auto frcBump = m_bumpstop.eval(-(stretch - m_x_bump)); // - -> tension, + -> compression
-        return -(frcSpring + frcBump + f_0);                   // + -> tension, - -> compression
+        auto frcDamper = m_damper.eval(v);
+
+        return -(frcSpring + frcBump + m_f0); // + -> tension, - -> compression
     }
 
     virtual void calcForce(const State &state,
@@ -179,7 +219,12 @@ public:
         const Vec3 r_G = p2_G - p1_G; // vector from point1 to point2
         const Real d = r_G.norm();    // distance between the points
 
-        const Real frcScalar = eval_force(d);
+        const Vec3 v1_G = m_matter.getMobilizedBody(m_body1).findStationVelocityInGround(state, m_station1);
+        const Vec3 v2_G = m_matter.getMobilizedBody(m_body2).findStationVelocityInGround(state, m_station2);
+        const Vec3 vRel = v2_G - v1_G; // relative velocity
+        const Real v = vRel.elementwiseMultiply(r_G / d).sum();
+
+        const Real frcScalar = eval_force(d, v);
 
         const Vec3 f1_G = (frcScalar / d) * r_G;
         bodyForces[m_body1] += SpatialVec(s1_G % f1_G, f1_G);
@@ -201,7 +246,7 @@ public:
         const Real d = r_G.norm();     // distance between the points
         const Real stretch = d - m_x0; // + -> tension, - -> compression
 
-        const Real frcScalar = eval_force(d);
+        const Real frcScalar = eval_force(d, 0.0);
 
         return fabs(frcScalar * stretch / 2); // 1/2 k (x-x0)^2
         // return k * stretch * stretch / 2;    // 1/2 k (x-x0)^2
@@ -218,8 +263,9 @@ private:
     Real m_x0;     // free length
     Real m_x_bump; // bump stop gap
 
-    Real f_0; // static preload;
+    Real m_f0; // static preload;
 
-    LookupTable1D m_springforce;
+    LookupTable1D m_spring;
     LookupTable1D m_bumpstop;
+    LookupTable1D m_damper;
 };

@@ -2,7 +2,7 @@
 
 int main()
 {
-    auto lookup_table_var = LookupTable1DVar();
+    auto lookup_table_var = LookupTable::LookupTable1D();
 
     // Populate the lookup table with some data
     auto num_samples = 48;
@@ -23,7 +23,7 @@ int main()
 
     std::cout << "u: " << idx << " - " << val << " | " << std::sin(idx) << std::endl;
 
-    auto lookup_table = LookupTable1D();
+    auto lookup_table = LookupTable::LookupTable1D();
 
     // Populate the lookup table with some data
     for (int i = 0; i < num_samples; i++)

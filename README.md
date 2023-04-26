@@ -16,15 +16,16 @@ System overview and reference frames (*[1] image source*)
 - [ ] Implement chassis and body mass / inertia parameters and load these from JSON files
 - [x] Steering mechanism kinematics
 - [x] Wheel bodies
-- [ ] Anti-rollbar has no torsional stiffness at the moment
-- [ ] Wheel colliders and ground plane, so that the model can be dropped on the ground
+- [x] Anti-rollbar torsional stiffness
+- [x] Wheel colliders and ground plane, so that the model can be dropped on the ground
 - [x] Non-linear spring/damper characteristics
     - [x] Bump stops
     - [x] Damper characteristic tables
 - [ ] Tire force and ground contact model
 - [ ] Simple aerodynamics
 - [ ] Simple driveline model
-
+- [ ] Data logging
+- [ ] Refactor
 
 ## Prerequisites
 
@@ -39,7 +40,6 @@ Compile the `main.cpp` using your favorite compiler and link against the `Simbod
 ```shell
 $ clang++ -std=c++17 -Wno-deprecated -Ofast main.cpp -o main -I/opt/homebrew/Cellar/simbody/3.7/include/simbody -L/opt/homebrew/Cellar/simbody/3.7/lib -lSimTKsimbody -lSimTKmath -lSimTKcommon
 ```
-
 
 ## References
 

@@ -17,7 +17,7 @@ System overview and reference frames (*[1] image source*)
 - [x] Steering mechanism kinematics
 - [x] Wheel bodies
 - [x] Anti-rollbar torsional stiffness
-- [ ] Wheel colliders and ground plane, so that the model can be dropped on the ground
+- [x] Wheel colliders and ground plane, so that the model can be dropped on the ground
 - [x] Non-linear spring/damper characteristics
     - [x] Bump stops
     - [x] Damper characteristic tables

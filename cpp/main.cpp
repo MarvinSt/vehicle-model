@@ -62,7 +62,7 @@ MobilizedBody CreateSteeringSystem(JSON hardpoints, MobilizedBody &chassis_body)
         lump the rest of the steering system inertia/mass alltogether in a single shaft.
     */
 
-    auto steering_simplified = false;
+    auto steering_simplified = true;
 
     auto scale = Vec3(1.0, 1.0, 1.0) / 1000.0;
 
@@ -149,7 +149,7 @@ MobilizedBody CreateSteeringSystem(JSON hardpoints, MobilizedBody &chassis_body)
     Constraint::Weld(steering_column_cha, steering_column);
 
     // Induce artificial motion
-    Motion::Sinusoid(steering_shaft, Motion::Level::Position, 20.0 * Pi / 180.0, 0.5 * 2.0 * Pi, 0.0);
+    Motion::Sinusoid(steering_shaft, Motion::Level::Position, 20.0 * Pi / 180.0, 2.0 * 2.0 * Pi, 0.0);
 
     return steering_rack;
 }
@@ -157,7 +157,7 @@ MobilizedBody CreateSteeringSystem(JSON hardpoints, MobilizedBody &chassis_body)
 void CreateAntiRollbar(JSON hardpoints, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, MobilizedBody &rocker_body_left, MobilizedBody &rocker_body_right)
 {
     // Define arb stiffness
-    auto torsion_stiffness = 100 * 1.00 * 1000.0 / 180.0 * Pi; // base unit N*mm/deg
+    auto torsion_stiffness = 1.00 * 1000.0 / 180.0 * Pi; // base unit N*mm/deg
     auto torsion_initial_angle = 0.0;
 
     // Describe mass and visualization properties for a generic body.
@@ -182,6 +182,7 @@ void CreateAntiRollbar(JSON hardpoints, GeneralForceSubsystem &forces, Mobilized
 
     // Attach the right hand side body (revolute w.r.t. right hand side body)
     auto arb_body_right = MobilizedBody::Revolute(arb_body_left, TransformWorldToBody(arb_body_left, arb_middle, arb_rot_dir), arbInfo, Transform());
+    // auto arb_body_right = MobilizedBody::Revolute(chassis_body, TransformWorldToBody(chassis_body, arb_middle, arb_rot_dir), arbInfo, Transform());
 
     // Define torsionbar stiffness for the anti-rollbar
     Force::MobilityLinearSpring(forces, arb_body_right, MobilizerUIndex(0), torsion_stiffness, torsion_initial_angle);
@@ -191,7 +192,7 @@ void CreateAntiRollbar(JSON hardpoints, GeneralForceSubsystem &forces, Mobilized
     CreateLink(arb_body_right, arb_droplink.elementwiseMultiply(Vec3(1.0, -1.0, 1.0)), rocker_body_right, droplink_rocker.elementwiseMultiply(Vec3(1.0, -1.0, 1.0)));
 
     // Induce artificial motion
-    Motion::Sinusoid(arb_body_left, Motion::Level::Position, 10.0 * Pi / 180.0, 4.0 * 2.0 * Pi, 0.0);
+    // Motion::Sinusoid(arb_body_left, Motion::Level::Position, 10.0 * Pi / 180.0, 4.0 * 2.0 * Pi, 0.0);
 }
 
 void CreateSpringDampersInboard(JSON hardpoints, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, MobilizedBody &rocker_body, bool left = true)
@@ -239,7 +240,7 @@ void CreateSpringDampersInboard(JSON hardpoints, GeneralForceSubsystem &forces, 
     // Force::TwoPointLinearDamper(forces, chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), rocker_body, PosWorldToBody(rocker_body, rocker_link_pos), damping);
 }
 
-void CreateSpringDampers(JSON hardpoints, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, MobilizedBody &upright_body, bool left = true)
+void CreateSpringDampersOutboard(JSON hardpoints, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, MobilizedBody &upright_body, bool left = true)
 {
     auto stiffness = 100.0; // spring stiffness
     auto damping = 1.0;     // damping ratio
@@ -287,6 +288,16 @@ Upright CreateUpright(JSON hardpoints, MobilizedBody &chassis_body, bool left = 
     // upright.spindle = MobilizedBody::Revolute(upright.upright, Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), ZAxis), PosWorldToBody(upright.upright, wheel_center)), wheelInfo, Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), ZAxis)));
     upright.spindle = MobilizedBody::Revolute(upright.upright, TransformWorldToBody(upright.upright, wheel_center, Vec3(0.0, 1.0, 0.0)), wheelInfo, Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), ZAxis)));
 
+    Body::Rigid driveShaftInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.1)));
+    driveShaftInfo.addDecoration(Transform(), DecorativeCylinder(0.01, 0.5));
+
+    // Create driveshafts
+    // MobilizedBody::Gimbal(upright.spindle, TransformWorldToBody(upright.spindle, wheel_center, Vec3(0.0, 1.0, 0.0)), driveShaftInfo, Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), ZAxis), Vec3(0.0, -0.5, 0.0)));
+
+    // Constraint::PointOnLine()
+
+    Motion::Steady(upright.spindle, 10.0);
+
     return upright;
 }
 
@@ -331,7 +342,7 @@ Geometry CreateMultiLink(JSON hardpoints, MobilizedBody &chassis_body, Mobilized
     return geom;
 }
 
-MobilizedBody CreateRocker(MultibodySystem &system, JSON hardpoints, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, MobilizedBody &upright_body, bool left = true)
+MobilizedBody CreateRocker(JSON hardpoints, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, MobilizedBody &upright_body, bool left = true)
 {
     Body::Rigid rockerInfo(MassProperties(0.1, Vec3(0), UnitInertia(0.001)));
     // rockerInfo.addDecoration(Transform(), DecorativeSphere(0.025));
@@ -358,8 +369,31 @@ MobilizedBody CreateRocker(MultibodySystem &system, JSON hardpoints, GeneralForc
     return rocker;
 }
 
+void CreateWheelContact(GeneralForceSubsystem &forces, MobilizedBody &upright, Real unloaded_radius)
+{
+    auto scale = Vec3(1.0, 1.0, 1.0) / 1000.0;
+
+    // if (!left)
+    //     scale = FlipAxis(scale, 1);
+
+    // auto rocker_pos = GetVec3(hardpoints["bellcrank_pivot"], scale);
+
+    const Real k = 100 * 1000; // vertical tire stiffness
+    const Real c = 500;        // vertical damping
+
+    Force::Custom(forces, new WheelContact(UnitVec3(0.0, 0.0, 1.0), upright, Vec3(0.0, 0.0, -unloaded_radius), k, c));
+}
+
 int main()
 {
+    auto step_size = 1.0e-3;
+
+    bool skip_viz = false;
+    bool constrain_chassis = false;
+    bool test_model = false;
+
+    auto t_end = 20.0;
+
     // Define the system.
     MultibodySystem system;
     SimbodyMatterSubsystem matter(system);
@@ -367,7 +401,7 @@ int main()
     Force::Gravity gravity(forces, matter, -ZAxis, 9.81);
 
     // Describe mass and visualization properties for a generic body.
-    Body::Rigid bodyInfo(MassProperties(1.0, Vec3(0), UnitInertia(1)));
+    Body::Rigid bodyInfo(MassProperties(200.0, Vec3(0), UnitInertia(200, 600, 600)));
     bodyInfo.addDecoration(Transform(), DecorativeSphere(0.1));
 
     // Load parameters
@@ -380,7 +414,12 @@ int main()
     auto chassis_pos = (GetVec3(data["front"]["wheel_center"], scale) + GetVec3(data["rear"]["wheel_center"], scale)) / 2.0;
     chassis_pos = Vec3(chassis_pos[0], 0.0, 0.35);
 
-    vehicle.chassis.body = MobilizedBody::Weld(matter.Ground(), Transform(chassis_pos), bodyInfo, Transform(Vec3(0)));
+    auto ground = matter.Ground();
+
+    vehicle.chassis.body = MobilizedBody::Free(ground, Transform(chassis_pos), bodyInfo, Transform(Vec3(0)));
+
+    if (constrain_chassis)
+        Constraint::PointOnLine(ground, UnitVec3(0, 0, 1), chassis_pos, vehicle.chassis.body, Vec3(0));
 
     for (int i = 0; i < 4; i++)
     {
@@ -399,7 +438,7 @@ int main()
         else
             vehicle.geometry[i] = CreateMultiLink(hardpoints, vehicle.chassis.body, vehicle.chassis.body, vehicle.upright[i].upright, left);
 
-        vehicle.rocker[i] = CreateRocker(system, hardpoints, forces, vehicle.chassis.body, vehicle.upright[i].upright, left);
+        vehicle.rocker[i] = CreateRocker(hardpoints, forces, vehicle.chassis.body, vehicle.upright[i].upright, left);
         CreateSpringDampersInboard(hardpoints, forces, vehicle.chassis.body, vehicle.rocker[i], left);
 
         if (!left)
@@ -407,12 +446,9 @@ int main()
             // Attach ARB assemblies
             CreateAntiRollbar(hardpoints, forces, vehicle.chassis.body, vehicle.rocker[i - 1], vehicle.rocker[i - 0]);
         }
+
+        CreateWheelContact(forces, vehicle.upright[i].upright, 0.20);
     }
-
-    bool skip_viz = false;
-    bool test_model = false;
-
-    auto t_end = 20.0;
 
     // Set up visualization.
     if (!skip_viz)
@@ -429,7 +465,6 @@ int main()
     // Simulate for 20 seconds.
     // RungeKuttaMersonIntegrator integ(system);
     // RungeKutta3Integrator integ(system);
-    auto step_size = 1.0e-3;
     SemiExplicitEulerIntegrator integ(system, step_size);
 
     // integ.setFixedStepSize(step_size);
@@ -437,7 +472,7 @@ int main()
     ts.initialize(state);
 
     if (test_model)
-        t_end = 0.001;
+        t_end = 0.01;
 
     auto start = high_resolution_clock::now();
     ts.stepTo(t_end);

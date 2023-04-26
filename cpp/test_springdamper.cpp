@@ -2,7 +2,7 @@
 
 int main()
 {
-    auto lookup_table_var = LookupTable::LookupTable1DVar();
+    auto lookup_table_var = LookupTable::LookupTable1D();
 
     // Populate the lookup table with some data
     auto num_samples = 48;

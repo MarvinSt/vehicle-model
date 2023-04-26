@@ -71,15 +71,22 @@ Rotation FromDirectionVector(Vec3 direction_a, Vec3 direction_b)
     return Rotation().setRotationFromTwoAxes(UnitVec3(direction_a), ZAxis, UnitVec3(direction_b), ZAxis);
 }
 
-Transform TransformWorldToBody(MobilizedBody body, Vec3 position, Vec3 direction, CoordinateAxis axis = ZAxis, bool invert = false)
+Transform TransformWorldToBody(MobilizedBody body, Vec3 position, Vec3 direction = Vec3(0.0, 0.0, 1.0), CoordinateAxis axis = ZAxis) // , CoordinateAxis axis = ZAxis, bool invert = false
 {
     auto transform = GetGlobalTransform(body);
 
     // calculate the original direction vector
-    auto orig_direction = position - transform.p();
+    UnitVec3 orig_direction;
+    if (axis == XAxis)
+        orig_direction = transform.R().x();
+    if (axis == YAxis)
+        orig_direction = transform.R().y();
+    if (axis == ZAxis)
+        orig_direction = transform.R().z();
+
     // std::cout << transform.p() << std::endl;
     auto rotation = Rotation().setRotationFromTwoAxes(UnitVec3(direction), axis, UnitVec3(orig_direction), axis); // Rotation().setRotationFromOneAxis(UnitVec3(direction), axis);
-    auto trans = (transform.invert() * Transform(rotation.invert(), position));
+    auto trans = (transform.invert() * Transform(rotation, position));
     return trans;
 }
 

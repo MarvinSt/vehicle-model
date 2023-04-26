@@ -60,7 +60,7 @@ MobilizedBody CreateSteeringSystem(JSON hardpoints, MobilizedBody &chassis_body)
         lump the rest of the steering system inertia/mass alltogether in a single shaft.
     */
 
-    auto steering_simplified = true;
+    auto steering_simplified = false;
 
     auto scale = Vec3(1.0, 1.0, 1.0) / 1000.0;
 
@@ -78,7 +78,8 @@ MobilizedBody CreateSteeringSystem(JSON hardpoints, MobilizedBody &chassis_body)
     steeringRackInfo.addDecoration(Transform(FromDirectionVector(Vec3(1.0, 0, 0), YAxis)), DecorativeCylinder(0.01, steering_rack_len / 2.0));
 
     // A slider is defined along the common X-axis, redirect it along the steering axis
-    auto steering_rack = MobilizedBody::Slider(chassis_body, Transform(FromDirectionVector(steering_rack_dir, XAxis), PosWorldToBody(chassis_body, steering_rack_pos)), steeringRackInfo, Transform(Vec3(0)));
+    // auto steering_rack = MobilizedBody::Slider(chassis_body, Transform(FromDirectionVector(steering_rack_dir, XAxis), PosWorldToBody(chassis_body, steering_rack_pos)), steeringRackInfo, Transform(Vec3(0)));
+    auto steering_rack = MobilizedBody::Slider(chassis_body, TransformWorldToBody(chassis_body, steering_rack_pos, steering_rack_dir, XAxis), steeringRackInfo, Transform(Vec3(0)));
 
     // Get steering shaft and column coordinates
     auto pinion_center_at_rack = GetVec3(hardpoints["pinion_center_at_rack"], scale);
@@ -102,7 +103,7 @@ MobilizedBody CreateSteeringSystem(JSON hardpoints, MobilizedBody &chassis_body)
     Body::Rigid steeringShaftInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.01)));
     steeringShaftInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, steering_shaft_len / 2.0));
 
-    auto steering_shaft = MobilizedBody::Revolute(chassis_body, TransformWorldToBody(chassis_body, pinion_center_at_rack, steering_shaft_dir, ZAxis), steeringShaftInfo, Transform(Vec3(0.0, 0.0, -steering_shaft_len / 2.0)));
+    auto steering_shaft = MobilizedBody::Revolute(chassis_body, TransformWorldToBody(chassis_body, pinion_center_at_rack, steering_shaft_dir), steeringShaftInfo, Transform(Vec3(0.0, 0.0, -steering_shaft_len / 2.0)));
 
     // Project a point at the center of the steering rack onto the steering shaft to find the virtual perpendicular contact point
     auto pinion_virtual_cen = ProjectPointOnLine(steering_rack_pos, pinion_center_at_rack, intermediate_shaft_forward);
@@ -128,7 +129,7 @@ MobilizedBody CreateSteeringSystem(JSON hardpoints, MobilizedBody &chassis_body)
     Body::Rigid intermediateShaftInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.01)));
     intermediateShaftInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, intermediate_shaft_len / 2.0));
 
-    auto intermediate_shaft = MobilizedBody::Universal(steering_shaft, TransformWorldToBody(steering_shaft, intermediate_shaft_forward, intermediate_shaft_dir, ZAxis), intermediateShaftInfo, Transform(Vec3(0.0, 0.0, -intermediate_shaft_len / 2.0)));
+    auto intermediate_shaft = MobilizedBody::Universal(steering_shaft, TransformWorldToBody(steering_shaft, intermediate_shaft_forward, intermediate_shaft_dir), intermediateShaftInfo, Transform(Vec3(0.0, 0.0, -intermediate_shaft_len / 2.0)));
 
     // Steering column
     auto steering_columm_dir = steeringwheel_center - intermediate_shaft_rear;
@@ -136,16 +137,17 @@ MobilizedBody CreateSteeringSystem(JSON hardpoints, MobilizedBody &chassis_body)
 
     // Split the body mass and inertia in half, because we need both a chassis mounted and intermediate shaft mounted part which are welded together
     Body::Rigid steeringColumnInfo(MassProperties(1.0 / 2.0, Vec3(0), UnitInertia(0.01) / 2.0));
-    auto steering_column = MobilizedBody::Universal(intermediate_shaft, TransformWorldToBody(intermediate_shaft, intermediate_shaft_rear, steering_columm_dir, ZAxis), steeringColumnInfo, Transform(Vec3(0.0, 0.0, -steering_column_len / 2.0)));
+    auto steering_column = MobilizedBody::Universal(intermediate_shaft, TransformWorldToBody(intermediate_shaft, intermediate_shaft_rear, steering_columm_dir), steeringColumnInfo, Transform(Vec3(0.0, 0.0, -steering_column_len / 2.0)));
     steeringColumnInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, steering_column_len / 2.0));
     steeringColumnInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0, 0.0, steering_column_len / 2.0)), DecorativeBrick(Vec3(0.125, 0.025, 0.05)));
     auto steering_column_cha = MobilizedBody::Revolute(chassis_body, TransformWorldToBody(chassis_body, intermediate_shaft_rear, steering_columm_dir, ZAxis), steeringColumnInfo, Transform(Vec3(0.0, 0.0, -steering_column_len / 2.0)));
+    // auto steering_column_cha = MobilizedBody::Revolute(steering_column, TransformWorldToBody(steering_column, intermediate_shaft_rear, steering_columm_dir, ZAxis), steeringColumnInfo, Transform(Vec3(0.0, 0.0, -steering_column_len / 2.0)));
 
     // Weld revolute chassis mounted joint to steering column
     Constraint::Weld(steering_column_cha, steering_column);
 
     // Induce artificial motion
-    Motion::Sinusoid(steering_column_cha, Motion::Level::Position, 0.0 * Pi / 180.0, 2.0 * 2.0 * Pi, 0.0);
+    Motion::Sinusoid(steering_shaft, Motion::Level::Position, 20.0 * Pi / 180.0, 0.5 * 2.0 * Pi, 0.0);
 
     return steering_rack;
 }
@@ -173,10 +175,12 @@ void CreateAntiRollbar(JSON hardpoints, GeneralForceSubsystem &forces, Mobilized
     arbInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), XAxis)), DecorativeCylinder(0.01, arb_len / 2.0));
 
     // Attach a revolute mobilizer to the chassis, this will assure a rotational degree of freedom of the ARB w.r.t. the chassis
-    auto arb_body_left = MobilizedBody::Revolute(chassis_body, Transform(FromDirectionVector(arb_rot_dir, ZAxis), PosWorldToBody(chassis_body, arb_middle)), arbInfo, Transform());
+    // auto arb_body_left = MobilizedBody::Revolute(chassis_body, Transform(FromDirectionVector(arb_rot_dir, ZAxis), PosWorldToBody(chassis_body, arb_middle)), arbInfo, Transform());
+    auto arb_body_left = MobilizedBody::Revolute(chassis_body, TransformWorldToBody(chassis_body, arb_middle, arb_rot_dir), arbInfo, Transform());
 
     // Attach the right hand side body
-    auto arb_body_right = MobilizedBody::Revolute(chassis_body, Transform(FromDirectionVector(arb_rot_dir.elementwiseMultiply(Vec3(1.0, 1.0, 1.0)), ZAxis), PosWorldToBody(chassis_body, arb_middle)), arbInfo, Transform());
+    // auto arb_body_right = MobilizedBody::Revolute(chassis_body, Transform(FromDirectionVector(arb_rot_dir.elementwiseMultiply(Vec3(1.0, 1.0, 1.0)), ZAxis), PosWorldToBody(chassis_body, arb_middle)), arbInfo, Transform());
+    auto arb_body_right = MobilizedBody::Revolute(chassis_body, TransformWorldToBody(chassis_body, arb_middle, arb_rot_dir), arbInfo, Transform());
 
     // Attach the droplink from the rocker body onto to the arb body
     CreateLink(arb_body_left, arb_droplink, rocker_body_left, droplink_rocker);
@@ -275,11 +279,12 @@ Upright CreateUpright(JSON hardpoints, MobilizedBody &chassis_body, bool left = 
 
     Vec3 wheel_center = GetVec3(hardpoints["wheel_center"], scale);
 
-    upright.upright = MobilizedBody::Free(chassis_body, Transform(PosWorldToBody(chassis_body, wheel_center)), uprightInfo, Transform(Vec3(0)));
+    upright.upright = MobilizedBody::Free(chassis_body, TransformWorldToBody(chassis_body, wheel_center), uprightInfo, Transform(Vec3(0)));
 
     // Attach the wheel mobilizer
-    // TODO: Include static toe and camber here
-    upright.spindle = MobilizedBody::Revolute(upright.upright, Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), ZAxis), PosWorldToBody(upright.upright, wheel_center)), wheelInfo, Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), ZAxis)));
+    // TODO: Include static toe and camber here (probably we should just orient the upright accordingly...)
+    // upright.spindle = MobilizedBody::Revolute(upright.upright, Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), ZAxis), PosWorldToBody(upright.upright, wheel_center)), wheelInfo, Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), ZAxis)));
+    upright.spindle = MobilizedBody::Revolute(upright.upright, TransformWorldToBody(upright.upright, wheel_center, Vec3(0.0, 1.0, 0.0)), wheelInfo, Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), ZAxis)));
 
     return upright;
 }
@@ -338,7 +343,8 @@ MobilizedBody CreateRocker(MultibodySystem &system, JSON hardpoints, GeneralForc
     auto rocker_pos = GetVec3(hardpoints["bellcrank_pivot"], scale);
     auto rocker_dir = GetVec3(hardpoints["bellcrank_pivot_orient"], scale) - rocker_pos;
 
-    auto transform_rocker_body = Transform(RotationFromDirection(rocker_dir), PosWorldToBody(chassis_body, rocker_pos));
+    auto transform_rocker_body = TransformWorldToBody(chassis_body, rocker_pos, rocker_dir);
+
     auto rocker = MobilizedBody::Pin(chassis_body, transform_rocker_body, rockerInfo, Transform(Vec3(0)));
 
     auto rocker_link_pos = GetVec3(hardpoints["prod_to_bellcrank"], scale);

@@ -2,6 +2,8 @@
 #include "json.hpp"
 #include "utils.hpp"
 
+#include "ground.hpp"
+
 #include "springdamper.hpp"
 
 #include <chrono>
@@ -155,7 +157,8 @@ MobilizedBody CreateSteeringSystem(JSON hardpoints, MobilizedBody &chassis_body)
 void CreateAntiRollbar(JSON hardpoints, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, MobilizedBody &rocker_body_left, MobilizedBody &rocker_body_right)
 {
     // Define arb stiffness
-    auto torsional_stiffness = 100 * 1.00 * 1000.0 / 180.0 * Pi; // base unit N*mm/deg
+    auto torsion_stiffness = 100 * 1.00 * 1000.0 / 180.0 * Pi; // base unit N*mm/deg
+    auto torsion_initial_angle = 0.0;
 
     // Describe mass and visualization properties for a generic body.
     Body::Rigid arbInfo(MassProperties(0.1, Vec3(0), UnitInertia(0.1)));
@@ -175,12 +178,13 @@ void CreateAntiRollbar(JSON hardpoints, GeneralForceSubsystem &forces, Mobilized
     arbInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), XAxis)), DecorativeCylinder(0.01, arb_len / 2.0));
 
     // Attach a revolute mobilizer to the chassis, this will assure a rotational degree of freedom of the ARB w.r.t. the chassis
-    // auto arb_body_left = MobilizedBody::Revolute(chassis_body, Transform(FromDirectionVector(arb_rot_dir, ZAxis), PosWorldToBody(chassis_body, arb_middle)), arbInfo, Transform());
     auto arb_body_left = MobilizedBody::Revolute(chassis_body, TransformWorldToBody(chassis_body, arb_middle, arb_rot_dir), arbInfo, Transform());
 
-    // Attach the right hand side body
-    // auto arb_body_right = MobilizedBody::Revolute(chassis_body, Transform(FromDirectionVector(arb_rot_dir.elementwiseMultiply(Vec3(1.0, 1.0, 1.0)), ZAxis), PosWorldToBody(chassis_body, arb_middle)), arbInfo, Transform());
-    auto arb_body_right = MobilizedBody::Revolute(chassis_body, TransformWorldToBody(chassis_body, arb_middle, arb_rot_dir), arbInfo, Transform());
+    // Attach the right hand side body (revolute w.r.t. right hand side body)
+    auto arb_body_right = MobilizedBody::Revolute(arb_body_left, TransformWorldToBody(arb_body_left, arb_middle, arb_rot_dir), arbInfo, Transform());
+
+    // Define torsionbar stiffness for the anti-rollbar
+    Force::MobilityLinearSpring(forces, arb_body_right, MobilizerUIndex(0), torsion_stiffness, torsion_initial_angle);
 
     // Attach the droplink from the rocker body onto to the arb body
     CreateLink(arb_body_left, arb_droplink, rocker_body_left, droplink_rocker);
@@ -188,9 +192,6 @@ void CreateAntiRollbar(JSON hardpoints, GeneralForceSubsystem &forces, Mobilized
 
     // Induce artificial motion
     Motion::Sinusoid(arb_body_left, Motion::Level::Position, 10.0 * Pi / 180.0, 4.0 * 2.0 * Pi, 0.0);
-
-    // Stiffness connecting the anti-rollbar bodies
-    Force::LinearBushing(forces, arb_body_left, arb_body_right, Vec6(1.0, 1.0, 1.0, 1.0, 1.0, 1.0) * torsional_stiffness, Vec6(1.0, 1.0, 1.0, 1.0, 1.0, 1.0) * torsional_stiffness * 1.0e-4);
 }
 
 void CreateSpringDampersInboard(JSON hardpoints, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, MobilizedBody &rocker_body, bool left = true)

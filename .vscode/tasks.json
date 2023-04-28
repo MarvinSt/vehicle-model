@@ -9,6 +9,7 @@
                 "-fcolor-diagnostics",
                 "-fansi-escape-codes",
                 "-Wno-deprecated",
+                "-Wgnu-array-member-paren-init",
                 // "-O3",
                 "-Ofast",
                 // "-g",

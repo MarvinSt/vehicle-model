@@ -1,4 +1,4 @@
-#include "springdamper.hpp"
+#include "../force_elements/table.hpp"
 
 int main()
 {

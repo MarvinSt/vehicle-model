@@ -1,3 +1,4 @@
+#pragma once
 
 #include "Simbody.h"
 #include "json.hpp"

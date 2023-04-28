@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Simbody.h"
 
 using namespace SimTK;

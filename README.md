@@ -25,7 +25,7 @@ System overview and reference frames (*[1] image source*)
 - [ ] Simple aerodynamics
 - [ ] Simple driveline model
 - [ ] Data logging
-- [ ] Refactor
+- [x] Refactor
 
 ## Prerequisites
 

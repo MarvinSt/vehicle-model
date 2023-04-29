@@ -1,32 +1,33 @@
 {
-    "units": {
+    "__units": {
         "position": "mm",
         "angle": "deg",
         "mass": "kg",
+        "inertia": "kg-mm2",
         "force": "N",
-        "torque": "Nm",
+        "torque": "N-m",
         "velocity": "m/s",
         "rotational_velocity": "rad/s",
         "stiffness": "N/m",
-        "torsional_stiffness": "Nm/rad"
+        "torsional_stiffness": "N-mm/deg"
     },
     "chassis": {
-        "mass": 200.0,
-        "inertia": [ ],
-        "pos": [ 1808.76, 0.0, 300.00 ]
+        "mass": 1.988E+02,
+        "inertia": [ 1.256E+07, 8.585E+07, 8.379E+07 ],
+        "pos": [ 905.98, 0.0, 480.90 ]
     },
     "front": {
         "suspension": {
             "upright": {
-                "mass": 1.0,
-                "inertia": [ ],
+                "mass": 1.56E+00,
+                "inertia": [ 5.36E+03, 2.34E+03, 5.56E+03 ],
                 "pos": [ 858.46, 665.06, 200.00 ]
             },
             "hub": {
-                "mass": 1.0,
-                "inertia": [ ],
+                "mass": 1.90E+00,
+                "inertia": [ 5.85E+03, 5.85E+03, 8.78E+03 ],
                 "pos": [ 858.46, 665.06, 200.00 ],
-                "compliance": [
+                "__compliance": [
                     [ ],
                     [ ],
                     [ ],
@@ -34,6 +35,26 @@
                     [ ],
                     [ ]
                 ]
+            },
+            "toe_link": {
+                "__mass": 1.70E-01,
+                "__inertia": [ 1.46E+03, 1.46E+03, 3.80E+00 ],
+                "chassis": [ 989.92, 207.47, 107.82 ],
+                "upright": [ 981.69, 526.01, 97.41 ]
+            },
+            "__lca": {
+                "mass": 4.54E-01,
+                "inertia": [ 7.84E+03, 3.69E+03, 1.15E+04 ],
+                "front": [ 639.73, 172.12, 85.69 ],
+                "upright": [ 852.61, 603.20, 84.05 ],
+                "rear": [ 933.62, 171.10, 84.69 ]
+            },
+            "__uca": {
+                "mass": 3.69E-01,
+                "inertia": [ 4.68E+03, 5.12E+03, 9.74E+03 ],
+                "front": [ 662.90, 235.40, 288.01 ],
+                "upright": [ 885.46, 601.94, 314.11 ],
+                "rear": [ 1056.78, 234.31, 284.50 ]
             },
             "lca_front": {
                 "chassis": [ 639.73, 172.12, 85.69 ],
@@ -51,73 +72,231 @@
                 "chassis": [ 1056.78, 234.31, 284.50 ],
                 "upright": [ 885.46, 601.94, 314.11 ]
             },
-            "toe_link": {
-                "chassis": [ 989.92, 207.47, 107.82 ],
-                "upright": [ 981.69, 526.01, 97.41 ]
+            "__driveshaft": {
+                "chassis": [ 2760.00, 150.00, 198.00 ],
+                "offset": 75.00
             },
             "pushrod": {
+                "__mass": 1.98E-01,
+                "__inertia": [ 3.19E+03, 3.19E+03, 4.39E+00 ],
                 "rocker": [ 894.97, 209.72, 381.00 ],
                 "upright": [ 846.36, 547.52, 105.96 ]
             },
             "rocker": {
-                "mass": 1,
-                "inertia": [ ],
+                "mass": 2.55E-01,
+                "inertia": [ 1.76E+02, 1.29E+02, 1.46E+02 ],
                 "pos": [ 851.29, 188.08, 402.09 ],
-                "dir": [ 855.09, 255.09, 478.21 ]
+                "dir": [ 855.09, 255.09, 478.21 ],
+                "__angle": 0.0,
+                "__torsionbar": {
+                    "torsional_stiffness": 0.0,
+                    "preload_angle": 0.0
+                }
             },
-            "force": {
+            "spring_damper": {
                 "chassis": [ 661.58, 111.67, 450.59 ],
                 "rocker": [ 867.73, 144.96, 439.29 ],
-                "free_length": 0.0,
-                "force_preload": 0.0,
+                "free_length": 209.00,
+                "preload_force": 0.0,
+                "bumpstop_gap": 30.0,
                 "spring_table": [
-                    [ 0.0, 0.0 ],
-                    [ 1.0, 1000.0 ]
+                    [ 0.00, 0.00 ],
+                    [ 1.00, 50000.00 ]
                 ],
                 "damper_table": [
-                    [ 0.0, 0.0 ],
-                    [ 1.0, 1000.0 ]
+                    [ -1.00, -5600.00 ],
+                    [ 1.00, 1100.00 ]
                 ],
-                "bumpstop_table": [ ]
+                "bumpstop_table": [
+                    [ 0.00, 0.00 ],
+                    [ 1.00, 350000.00 ]
+                ]
             }
         },
-        "antirollbar": {
-            "mass": 0.1,
-            "inertia": [ ],
+        "__antirollbar": {
+            "mass": 1.80E-01,
+            "inertia": [ 362.0, 187.2, 187.2 ],
             "pos": [ 1016.00, 0.0, 304.80 ],
             "bend": [ 1016.00, 139.70, 304.80 ],
             "droplink": [ 1016.00, 139.70, 444.50 ],
             "rocker": [ 867.73, 144.96, 439.29 ],
-            "stifness": 0.0
+            "stifness": 1.0
+        },
+        "antirollbar": {
+            "arb": {
+                "mass": 4.50E-02,
+                "inertia": [ 1.81E+02, 9.36E+01, 9.36E+01 ],
+                "center": [ 1016.00, 0.0, 304.80 ],
+                "bend": [ 1016.00, 0.0, 304.80 ]
+            },
+            "droplink": {
+                "mass": 4.50E-02,
+                "inertia": [ 8.78E+01, 8.78E+01, 1.17E+00 ],
+                "arb": [ 1016.00, 139.70, 444.50 ],
+                "rocker": [ 867.73, 144.96, 439.29 ]
+            }
         },
         "steering": {
-            "rack": {
-                "mass": 1.0,
-                "inertia": [ ]
+            "intermediate_shaft": {
+                "mass": 1.13E-01,
+                "inertia": [ 1.76E+02, 1.76E+02, 2.93E+00 ],
+                "joint": [ 1069.90, 0.0, 263.08 ]
             },
             "pinion": {
+                "mass": 1.13E-01,
+                "inertia": [ 1.17E+01, 1.17E+01, 8.78E+00 ],
                 "pos": [ 990.46, 0.0, 155.61 ],
                 "ratio": 0.0
             },
-            "steering_shaft": {
-                "ratio": 0.0,
-                "pinion": [ 990.46, 0.0, 155.61 ]
-            },
-            "intermediate_shaft": {
-                "mass": 0.0,
-                "inertia": [ ],
-                "joint": [ 1069.90, 0.0, 263.08 ]
-            },
             "steering_colum": {
-                "mass": 0.0,
-                "inertia": [ ],
+                "mass": 2.27E-01,
+                "inertia": [ 1.23E+03, 1.23E+03, 5.85E+00 ],
                 "joint": [ 1149.33, 0.0, 370.55 ]
             },
+            "steering_rack": {
+                "mass": 2.27E-01,
+                "inertia": [ 3.13E+03, 3.13E+03, 1.76E+01 ]
+            },
+            "steering_shaft": {
+                "mass": 1.13E-01,
+                "inertia": [ 1.76E+02, 1.76E+02, 2.93E+00 ],
+                "pinion": [ 990.46, 0.0, 155.61 ]
+            },
             "steering_wheel": {
-                "mass": 1.0,
-                "inertia": [ ],
+                "mass": 9.07E-01,
+                "inertia": [ 7.32E+03, 7.32E+03, 1.46E+04 ],
                 "pos": [ 1390.48, 0.0, 450.62 ]
             }
+        },
+        "wheel": {
+            "mass": 7.57E+00,
+            "inertia": [ 2.34E+05, 2.34E+05, 3.51E+05 ]
+        }
+    },
+    "rear": {
+        "suspension": {
+            "upright": {
+                "mass": ,
+                "inertia": [ ],
+                "pos": [ 2759.06, 582.41, 198.04 ]
+            },
+            "hub": {
+                "mass": ,
+                "inertia": [ ],
+                "pos": [ 2759.06, 582.41, 198.04 ],
+                "__compliance": [
+                    [ ],
+                    [ ],
+                    [ ],
+                    [ ],
+                    [ ],
+                    [ ]
+                ]
+            },
+            "toe_link": {
+                "__mass": ,
+                "__inertia": [ ],
+                "chassis": [ 2592.86, 208.62, 77.36 ],
+                "upright": [ 2692.51, 584.90, 86.91 ]
+            },
+            "__lca": {
+                "mass": ,
+                "inertia": [ ],
+                "front": [ 2592.86, 208.62, 77.36 ],
+                "upright": [ 2806.91, 586.38, 90.32 ],
+                "rear": [ 2933.40, 211.47, 73.28 ]
+            },
+            "__uca": {
+                "mass": ,
+                "inertia": [ ],
+                "front": [ 2599.53, 251.44, 272.10 ],
+                "upright": [ 2801.81, 585.27, 320.03 ],
+                "rear": [ 2927.46, 248.68, 269.95 ]
+            },
+            "lca_front": {
+                "chassis": [ 2592.86, 208.62, 77.36 ],
+                "upright": [ 2806.91, 586.38, 90.32 ]
+            },
+            "lca_rear": {
+                "chassis": [ 2933.40, 211.47, 73.28 ],
+                "upright": [ 2806.91, 586.38, 90.32 ]
+            },
+            "uca_front": {
+                "chassis": [ 2599.53, 251.44, 272.10 ],
+                "upright": [ 2801.81, 585.27, 320.03 ]
+            },
+            "uca_rear": {
+                "chassis": [ 2927.46, 248.68, 269.95 ],
+                "upright": [ 2801.81, 585.27, 320.03 ]
+            },
+            "__driveshaft": {
+                "chassis": [ 2760.00, 150.00, 198.00 ],
+                "offset": 75.00
+            },
+            "pushrod": {
+                "__mass": ,
+                "__inertia": [ ],
+                "rocker": [ 2890.99, 233.44, 298.83 ],
+                "upright": [ 2807.38, 537.01, 105.74 ]
+            },
+            "rocker": {
+                "mass": ,
+                "inertia": [ ],
+                "pos": [ 2929.92, 189.88, 293.66 ],
+                "dir": [ 2877.32, 169.89, 294.75 ],
+                "__angle": 0.0,
+                "__torsionbar": {
+                    "torsional_stiffness": 0.0,
+                    "preload_angle": 0.0
+                }
+            },
+            "spring_damper": {
+                "chassis": [ 2972.25, 48.18, 136.27 ],
+                "rocker": [ 2968.07, 150.48, 326.51 ],
+                "free_length": 216.00,
+                "preload_force": 0.0,
+                "bumpstop_gap": 55.0,
+                "spring_table": [
+                    [ 0.00, 0.00 ],
+                    [ 1.00, 50000.00 ]
+                ],
+                "damper_table": [
+                    [ -1.00, -5600.00 ],
+                    [ 1.00, 1100.00 ]
+                ],
+                "bumpstop_table": [
+                    [ 0.00, 0.00 ],
+                    [ 1.00, 350000.00 ]
+                ]
+            }
+        },
+        "__antirollbar": {
+            "mass": ,
+            "inertia": [ ],
+            "pos": [ 2890.52, 0.00, 127.00 ],
+            "bend": [ 2890.52, 139.70, 127.00 ],
+            "droplink": [ 2984.50, 139.70, 127.00 ],
+            "rocker": [ 2984.50, 139.70, 342.90 ],
+            "stifness": 1.0
+        },
+        "antirollbar": {
+            "arb": {
+                "mass": ,
+                "inertia": [ ],
+                "center": [ 2890.52, 0.00, 127.00 ],
+                "bend": [ 2890.52, 139.70, 127.00 ],
+                "stifness": 1.0
+            },
+            "droplink": {
+                "mass": ,
+                "inertia": [ ],
+                "arb": [ 2984.50, 139.70, 127.00 ],
+                "rocker": [ 2984.50, 139.70, 342.90 ]
+            }
+        },
+        "wheel": {
+            "mass": 7.57E+00,
+            "inertia": [ 2.34E+05, 2.34E+05, 3.51E+05 ]
         }
     }
 }

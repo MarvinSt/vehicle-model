@@ -5,6 +5,8 @@
 #include "utilities/utils.hpp"
 #include "force_elements/spring_damper.hpp"
 
+#include <memory>
+
 using namespace json;
 
 using namespace SimTK;
@@ -16,7 +18,7 @@ using namespace SimTK;
 class SpringDamperSystem
 {
 protected:
-    ForceElement::TabularSpringDamper *tabular_spring;
+    std::unique_ptr<ForceElement::TabularSpringDamper> tabular_spring;
 
 public:
     SpringDamperSystem(){};
@@ -61,7 +63,7 @@ public:
         x0 += dist;
 
         // define tabular spring damper element
-        tabular_spring = new ForceElement::TabularSpringDamper(chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), rocker_body, PosWorldToBody(rocker_body, rocker_link_pos), x0);
+        tabular_spring = std::unique_ptr<ForceElement::TabularSpringDamper>(new ForceElement::TabularSpringDamper(chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), rocker_body, PosWorldToBody(rocker_body, rocker_link_pos), x0));
 
         // push linear data (for now)
         tabular_spring->push_spring_table(-1.0, -stiffness);
@@ -71,7 +73,7 @@ public:
         tabular_spring->push_damper_table(+1.0, +damping);
 
         const ForceElement::TabularSpringDamper &tabular_spring_ref = *tabular_spring;
-        Force::Custom(forces, tabular_spring);
+        Force::Custom(forces, tabular_spring.get());
     }
 
     /**

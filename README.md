@@ -23,11 +23,13 @@ System overview and reference frames (*[1] image source*)
     - [x] Bump stops
     - [x] Damper characteristic tables
 - [ ] Tire force and ground contact model
-- [ ] Simple aerodynamics
 - [ ] Simple driveline model
+- [ ] Braking system
+- [ ] Simple aerodynamics
 - [ ] Data logging
 - [x] Refactor
-- [ ] Setup Doxygen documentation
+- [x] Setup Doxygen documentation
+- [ ] Implement functions to query mass and inertia properties of each subsystem (usefull for final total mass/inertia accounting purposes)
 
 ## Prerequisites
 

@@ -6,6 +6,8 @@
 #include "utilities/json.hpp"
 #include "force_elements/ground.hpp"
 
+#include <memory>
+
 using namespace json;
 
 using namespace SimTK;
@@ -21,7 +23,7 @@ protected:
     // Tire m_tire;
     // Terrain m_terrain (could actually be part of the tire?)
 
-    WheelContact *m_contact;
+    std::unique_ptr<WheelContact> m_contact;
 
 public:
     Wheel() {}
@@ -70,8 +72,8 @@ public:
 
         // Attach a wheel contact collider to the hub, this is important, because we need to project straight
         // down along the upright and the spindle is rotating. We can't use the upright body because of possible hub compliance
-        m_contact = new WheelContact(UnitVec3(0.0, 0.0, 1.0), hub_body, Vec3(0.0, 0.0, -r_unloaded), k, c);
-        Force::Custom(forces, m_contact);
+        m_contact = std::unique_ptr<WheelContact>(new WheelContact(UnitVec3(0.0, 0.0, 1.0), hub_body, Vec3(0.0, 0.0, -r_unloaded), k, c));
+        Force::Custom(forces, m_contact.get());
     }
 
     /**

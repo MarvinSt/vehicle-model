@@ -1,3 +1,4 @@
+\mainpage
 ## Introduction
 
 Vehicle chassis model developed using [Simbody](https://github.com/simbody/simbody) multi-body library. This is not a complete chassis model, it only focusses on the kinematics. The kinematic parameters are loaded from a JSON file.

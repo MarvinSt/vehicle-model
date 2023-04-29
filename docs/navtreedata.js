@@ -25,8 +25,12 @@
 var NAVTREE =
 [
   [ "Vehicle Model", "index.html", [
-    [ "Introduction", "index.html", "index" ],
     [ "Classes", "annotated.html", [
+      [ "Introduction", "index.html#autotoc_md0", null ],
+      [ "System and Subsystems Overview", "index.html#autotoc_md1", null ],
+      [ "Open Tasks", "index.html#autotoc_md2", null ],
+      [ "Prerequisites", "index.html#autotoc_md3", null ],
+      [ "References", "index.html#autotoc_md4", null ],
       [ "Class List", "annotated.html", "annotated_dup" ],
       [ "Class Index", "classes.html", null ],
       [ "Class Hierarchy", "hierarchy.html", "hierarchy" ],

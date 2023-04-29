@@ -13,9 +13,13 @@ using namespace json;
 
 using namespace SimTK;
 
+/**
+ * @brief The AntiRollbar base class composing the left/right side anti-rollbar bodies joined by the torsional spring stiffness.
+ *
+ */
 class AntiRollbar
 {
-private:
+protected:
     MobilizedBody m_arb_left;
     MobilizedBody m_arb_right;
 
@@ -24,19 +28,45 @@ private:
 public:
     AntiRollbar() {}
 
+    /**
+     * @brief Construct a new Anti Rollbar object (kinematics only)
+     *
+     * @param data
+     * @param scale
+     * @param chassis_body
+     * @param arb_attachment_body
+     */
     AntiRollbar(JSON data, Vec3 scale, MobilizedBody &chassis_body, MobilizedBody arb_attachment_body[2])
     {
         // create anti-rollbar bodies and kinematic links only, without torsional stiffness
-        CreateAntiRollbar(data, scale, chassis_body, arb_attachment_body[0], arb_attachment_body[1]);
+        createAntiRollbar(data, scale, chassis_body, arb_attachment_body[0], arb_attachment_body[1]);
     }
 
+    /**
+     * @brief Construct a new Anti Rollbar object (including torsional stiffness)
+     *
+     * @param data
+     * @param scale
+     * @param forces
+     * @param chassis_body
+     * @param arb_attachment_body
+     */
     AntiRollbar(JSON data, Vec3 scale, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, MobilizedBody arb_attachment_body[2])
     {
-        CreateAntiRollbar(data, scale, chassis_body, arb_attachment_body[0], arb_attachment_body[1]);
-        CreateTorsionalStiffness(forces);
+        createAntiRollbar(data, scale, chassis_body, arb_attachment_body[0], arb_attachment_body[1]);
+        createTorsionalStiffness(forces);
     }
 
-    void CreateAntiRollbar(JSON data, Vec3 scale, MobilizedBody &chassis_body, MobilizedBody &rocker_body_left, MobilizedBody &rocker_body_right)
+    /**
+     * @brief Create a Anti Rollbar object
+     *
+     * @param data
+     * @param scale
+     * @param chassis_body
+     * @param rocker_body_left
+     * @param rocker_body_right
+     */
+    void createAntiRollbar(JSON data, Vec3 scale, MobilizedBody &chassis_body, MobilizedBody &rocker_body_left, MobilizedBody &rocker_body_right)
     {
         auto arb_bend = GetVec3(data["arb_bend"], scale);
         auto arb_middle = Vec3(arb_bend[0], 0.0, arb_bend[2]);
@@ -62,7 +92,12 @@ public:
         CreateLink(m_arb_right, arb_droplink.elementwiseMultiply(Vec3(1.0, -1.0, 1.0)), rocker_body_right, droplink_rocker.elementwiseMultiply(Vec3(1.0, -1.0, 1.0)));
     }
 
-    void CreateTorsionalStiffness(GeneralForceSubsystem &forces)
+    /**
+     * @brief Create a Torsional Stiffness object
+     *
+     * @param forces
+     */
+    void createTorsionalStiffness(GeneralForceSubsystem &forces)
     {
         // Define arb stiffness
         auto torsion_stiffness = 1.00 * 1000.0 / 180.0 * Pi; // base unit N*mm/deg

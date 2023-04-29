@@ -26,6 +26,7 @@ System overview and reference frames (*[1] image source*)
 - [ ] Simple driveline model
 - [ ] Data logging
 - [x] Refactor
+- [ ] Setup Doxygen documentation
 
 ## Prerequisites
 
@@ -47,3 +48,4 @@ Hard points and model parameters taken from this work:
 
 [1] Mueller, Russell Lee (2005). Full vehicle dynamics model of a formula SAE racecar using ADAMS/Car. Master's thesis, Texas A&M University. Texas A&M University. Available electronically from https://hdl.handle.net/1969.1/2600.
 PDF: https://core.ac.uk/download/pdf/4269718.pdf
+[2] https://2022.help.altair.com/2022/hwdesktop/hwx/topics/motionview/rear_macpherson_strut_r.htm

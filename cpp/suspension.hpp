@@ -15,9 +15,13 @@ using namespace json;
 
 using namespace SimTK;
 
+/**
+ * @brief The SuspensionSystem base class, which composes the upright and hub, the suspension linkages and optionally a rocker and push/pull rod.
+ *
+ */
 class SuspensionSystem
 {
-private:
+protected:
     // locally created bodies
     MobilizedBody m_hub;
     MobilizedBody m_upright;
@@ -34,43 +38,88 @@ private:
 public:
     SuspensionSystem(){};
 
+    /**
+     * @brief Construct a new Suspension System object
+     *
+     * @param data
+     * @param scale
+     * @param forces
+     * @param chassis_body
+     * @param steering_body
+     */
     SuspensionSystem(JSON data, Vec3 scale, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, MobilizedBody &steering_body)
     {
-        CreateUpright(data, scale, chassis_body);
-        CreateRocker(data, scale, chassis_body);
-        CreateMultiLink(data, scale, chassis_body, steering_body);
+        createUpright(data, scale, chassis_body);
+        createRocker(data, scale, chassis_body);
+        createMultiLink(data, scale, chassis_body, steering_body);
 
-        CreateSpringDamperSystem(data, scale, forces, chassis_body);
+        createSpringDamperSystem(data, scale, forces, chassis_body);
     };
 
-    void CreateSpringDamperSystem(JSON data, Vec3 scale, GeneralForceSubsystem &forces, MobilizedBody &chassis_body)
+    /**
+     * @brief Create a Spring Damper System object
+     *
+     * @param data
+     * @param scale
+     * @param forces
+     * @param chassis_body
+     */
+    void createSpringDamperSystem(JSON data, Vec3 scale, GeneralForceSubsystem &forces, MobilizedBody &chassis_body)
     {
         // TODO: The spring damper system should be able to decide where to attach to
         // or alternatively the suspension system should provide a suspension attachment frame
         m_spring_damper = SpringDamperSystem(data, scale, forces, chassis_body, m_rocker, m_upright);
     }
 
-    MobilizedBody &GetUpright()
+    /**
+     * @brief Get the Upright object
+     *
+     * @return MobilizedBody&
+     */
+    MobilizedBody &getUpright()
     {
         return m_upright;
     }
 
-    MobilizedBody &GetRocker()
+    /**
+     * @brief Get the Rocker object
+     *
+     * @return MobilizedBody&
+     */
+    MobilizedBody &getRocker()
     {
         return m_rocker;
     }
 
-    MobilizedBody &GetHub()
+    /**
+     * @brief Get the Hub object
+     *
+     * @return MobilizedBody&
+     */
+    MobilizedBody &getHub()
     {
         return m_hub;
     }
 
-    bool HasRocker()
+    /**
+     * @brief Whether this Suspension System has a rocker or not
+     *
+     * @return true
+     * @return false
+     */
+    bool hasRocker()
     {
         return !m_rocker.isEmptyHandle();
     }
 
-    void CreateUpright(JSON data, Vec3 scale, MobilizedBody &m_chassis)
+    /**
+     * @brief Create a Upright object
+     *
+     * @param data
+     * @param scale
+     * @param m_chassis
+     */
+    void createUpright(JSON data, Vec3 scale, MobilizedBody &m_chassis)
     {
         // TODO: Allow for compliance between spindle and upright
         // this is hopefully quite straight forward by replacing the
@@ -97,7 +146,14 @@ public:
         // m_spindle = MobilizedBody::Revolute(m_upright, TransformWorldToBody(m_upright, wheel_center, Vec3(0.0, 1.0, 0.0)), spindleInfo, Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), ZAxis)));
     }
 
-    void CreateRocker(JSON data, Vec3 scale, MobilizedBody &m_chassis)
+    /**
+     * @brief Create a Rocker object
+     *
+     * @param data
+     * @param scale
+     * @param m_chassis
+     */
+    void createRocker(JSON data, Vec3 scale, MobilizedBody &m_chassis)
     {
         Body::Rigid rockerInfo(MassProperties(0.1, Vec3(0), UnitInertia(0.001)));
         // rockerInfo.addDecoration(Transform(), DecorativeSphere(0.025));
@@ -113,7 +169,15 @@ public:
         m_pushpull = CreateLink(m_upright, upright_link_pos, m_rocker, rocker_link_pos);
     }
 
-    void CreateMultiLink(JSON data, Vec3 scale, MobilizedBody &m_chassis, MobilizedBody &m_steering)
+    /**
+     * @brief Create a Multi Link object
+     *
+     * @param data
+     * @param scale
+     * @param m_chassis
+     * @param m_steering
+     */
+    void createMultiLink(JSON data, Vec3 scale, MobilizedBody &m_chassis, MobilizedBody &m_steering)
     {
         /*
         |   ^ y+

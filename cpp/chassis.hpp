@@ -16,22 +16,42 @@ using namespace json;
 
 using namespace SimTK;
 
+/**
+ * @brief The Chassis base class, which composes various subsystems, such as the axles and the chassis body itself.
+ *
+ */
 class Chassis
 {
-private:
+protected:
     MobilizedBody m_chassis;
     Axle m_axle[2];
 
 public:
     Chassis() {}
 
+    /**
+     * @brief Construct a new Chassis object
+     *
+     * @param data
+     * @param scale
+     * @param forces
+     * @param ground
+     */
     Chassis(JSON data, Vec3 scale, GeneralForceSubsystem &forces, MobilizedBody &ground)
     {
-        CreateChassis(data, scale, ground);
-        CreateAxles(data, scale, forces);
+        createChassis(data, scale, ground);
+        createAxles(data, scale, forces);
     }
 
-    void CreateChassis(JSON data, Vec3 scale, MobilizedBody &ground, bool fixed = false)
+    /**
+     * @brief Create a Chassis object
+     *
+     * @param data
+     * @param scale
+     * @param ground
+     * @param fixed
+     */
+    void createChassis(JSON data, Vec3 scale, MobilizedBody &ground, bool fixed = false)
     {
         auto constrain_chassis = false;
 
@@ -55,7 +75,14 @@ public:
         }
     }
 
-    void CreateAxles(JSON data, Vec3 scale, GeneralForceSubsystem &forces)
+    /**
+     * @brief Create the Axle objects
+     *
+     * @param data
+     * @param scale
+     * @param forces
+     */
+    void createAxles(JSON data, Vec3 scale, GeneralForceSubsystem &forces)
     {
         m_axle[0] = Axle(data["front"], scale, forces, m_chassis, true);
         m_axle[1] = Axle(data["rear"], scale, forces, m_chassis, false);

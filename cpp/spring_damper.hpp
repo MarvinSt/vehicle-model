@@ -9,21 +9,44 @@ using namespace json;
 
 using namespace SimTK;
 
+/**
+ * @brief The SpringDamperSystem base class composing the TabularSpringDamper system suspending the upright (either directly or indirectly, i.e. rocker-mounted).
+ *
+ */
 class SpringDamperSystem
 {
-private:
+protected:
     ForceElement::TabularSpringDamper *tabular_spring;
 
 public:
     SpringDamperSystem(){};
 
+    /**
+     * @brief Construct a new Spring Damper System object
+     *
+     * @param data dictionary with the mounting hardpoints and suspension data
+     * @param scale scaling applied to the hard points (allowing for unit conversion and mirroring)
+     * @param forces the general forces subsystem of the multibody solver
+     * @param chassis_body used for attaching base (stationary) side of the spring damper system
+     * @param rocker_body used for attaching end (moving) side of the rocker mounted spring damper system
+     * @param upright_body used for attaching the (moving) side of the upright mounted spring damper system
+     */
     SpringDamperSystem(JSON data, Vec3 scale, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, MobilizedBody &rocker_body, MobilizedBody &upright_body)
     {
-        CreateSpringDampersInboard(data, scale, forces, chassis_body, rocker_body);
-        CreateSpringDampersOutboard(data, scale, forces, chassis_body, upright_body);
+        createSpringDampersInboard(data, scale, forces, chassis_body, rocker_body);
+        createSpringDampersOutboard(data, scale, forces, chassis_body, upright_body);
     }
 
-    void CreateSpringDampersInboard(JSON data, Vec3 scale, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, MobilizedBody &rocker_body)
+    /**
+     * @brief Create a Spring Dampers Inboard object (rocker mounted)
+     *
+     * @param data dictionary with the mounting hardpoints and suspension data
+     * @param scale scaling applied to the hard points (allowing for unit conversion and mirroring)
+     * @param forces the general forces subsystem of the multibody solver
+     * @param chassis_body used for attaching base (stationary) side of the spring damper system
+     * @param rocker_body used for attaching end (moving) side of the rocker mounted spring damper system
+     */
+    void createSpringDampersInboard(JSON data, Vec3 scale, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, MobilizedBody &rocker_body)
     {
         auto stiffness = 60.0 * 1000.0; // spring stiffness
         auto damping = 1.0 * 1000.0;    // damping ratio
@@ -51,7 +74,16 @@ public:
         Force::Custom(forces, tabular_spring);
     }
 
-    void CreateSpringDampersOutboard(JSON data, Vec3 scale, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, MobilizedBody &upright_body)
+    /**
+     * @brief Create a Spring Dampers Outboard object (upright mounted)
+     *
+     * @param data dictionary with the mounting hardpoints and suspension data
+     * @param scale scaling applied to the hard points (allowing for unit conversion and mirroring)
+     * @param forces the general forces subsystem of the multibody solver
+     * @param chassis_body used for attaching base (stationary) side of the spring damper system
+     * @param upright_body used for attaching the (moving) side of the upright mounted spring damper system
+     */
+    void createSpringDampersOutboard(JSON data, Vec3 scale, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, MobilizedBody &upright_body)
     {
         // not implemented... but the idea is the same
     }

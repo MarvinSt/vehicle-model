@@ -14,10 +14,13 @@
 using namespace json;
 
 using namespace SimTK;
-
+/**
+ * @brief The Axle base class, which composes left and right side suspension, tires and optional anti-roll bar and steering system
+ *
+ */
 class Axle
 {
-private:
+protected:
     Wheel m_wheel[2];
     SuspensionSystem m_suspension[2];
     SteeringSystem m_steering;
@@ -26,6 +29,15 @@ private:
 public:
     Axle() {}
 
+    /**
+     * @brief Construct a new Axle object
+     *
+     * @param data
+     * @param scale
+     * @param forces
+     * @param chassis_body
+     * @param steering
+     */
     Axle(JSON data, Vec3 scale, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, bool steering = true)
     {
         // create steering system (this can probably be done implicitly by checking the JSON data)
@@ -33,7 +45,7 @@ public:
             m_steering = SteeringSystem(data, scale, chassis_body);
 
         // steering body for the toe link connection (steering rack if available, otherwise chassis)
-        auto steering_body = m_steering.HasSteering() ? m_steering.GetRack() : chassis_body;
+        auto steering_body = m_steering.hasSteering() ? m_steering.getRack() : chassis_body;
 
         // create kinematics
         m_suspension[0] = SuspensionSystem(data, scale, forces, chassis_body, steering_body);
@@ -42,36 +54,66 @@ public:
         // create anti-rollbar
         // TODO: this should be done differently, the ARB should be able to decide the attachment body
         // to do this properly, it should take a reference to the kinematics directly
-        MobilizedBody arb_attachment_bodies[] = {m_suspension[0].GetRocker(), m_suspension[1].GetRocker()};
+        MobilizedBody arb_attachment_bodies[] = {m_suspension[0].getRocker(), m_suspension[1].getRocker()};
         m_arb = AntiRollbar(data, scale, forces, chassis_body, arb_attachment_bodies);
 
         // create wheels
-        m_wheel[0] = Wheel(m_suspension[0].GetHub(), forces, 0.20);
-        m_wheel[1] = Wheel(m_suspension[1].GetHub(), forces, 0.20);
+        m_wheel[0] = Wheel(m_suspension[0].getHub(), forces, 0.20);
+        m_wheel[1] = Wheel(m_suspension[1].getHub(), forces, 0.20);
     }
 
-    MobilizedBody &GetAntiRollbarFrame(int side, bool rocker_mounted = false)
+    /**
+     * @brief Get the Anti Rollbar Frame object
+     *
+     * @param side
+     * @param rocker_mounted
+     * @return MobilizedBody&
+     */
+    MobilizedBody &getAntiRollbarFrame(int side, bool rocker_mounted = false)
     {
-        return rocker_mounted ? GetRocker(side) : GetUpright(side);
+        return rocker_mounted ? getRocker(side) : getUpright(side);
     }
 
-    SteeringSystem &GetSteering()
+    /**
+     * @brief Get the Steering object
+     *
+     * @return SteeringSystem&
+     */
+    SteeringSystem &getSteering()
     {
         return m_steering;
     }
 
-    MobilizedBody &GetRocker(int side)
+    /**
+     * @brief Get the Rocker object
+     *
+     * @param side
+     * @return MobilizedBody&
+     */
+    MobilizedBody &getRocker(int side)
     {
-        return m_suspension[side].GetRocker();
+        return m_suspension[side].getRocker();
     }
 
-    MobilizedBody &GetUpright(int side)
+    /**
+     * @brief Get the Upright object
+     *
+     * @param side
+     * @return MobilizedBody&
+     */
+    MobilizedBody &getUpright(int side)
     {
-        return m_suspension[side].GetUpright();
+        return m_suspension[side].getUpright();
     }
 
-    MobilizedBody GetWheel(int side)
+    /**
+     * @brief Get the Wheel object
+     *
+     * @param side
+     * @return MobilizedBody&
+     */
+    MobilizedBody &getWheel(int side)
     {
-        return m_wheel[side].GetWheel();
+        return m_wheel[side].getWheel();
     }
 };

@@ -10,9 +10,13 @@ using namespace json;
 
 using namespace SimTK;
 
+/**
+ * @brief The Wheel base class, which composes the WheelContact collider and wheel body
+ *
+ */
 class Wheel
 {
-private:
+protected:
     MobilizedBody m_wheel;
     // Tire m_tire;
     // Terrain m_terrain (could actually be part of the tire?)
@@ -24,13 +28,25 @@ public:
 
     Wheel(MobilizedBody &hub_body) {}
 
+    /**
+     * @brief Construct a new Wheel object
+     *
+     * @param hub_body
+     * @param forces
+     * @param r_unloaded
+     */
     Wheel(MobilizedBody &hub_body, GeneralForceSubsystem &forces, Real r_unloaded)
     {
-        CreateWheel(hub_body);
-        CreateWheelCollider(hub_body, forces, r_unloaded);
+        createWheel(hub_body);
+        createWheelCollider(hub_body, forces, r_unloaded);
     }
 
-    void CreateWheel(MobilizedBody &hub_body)
+    /**
+     * @brief Create a Wheel object
+     *
+     * @param hub_body
+     */
+    void createWheel(MobilizedBody &hub_body)
     {
         Body::Rigid wheelInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.1)));
         wheelInfo.addDecoration(Transform(), DecorativeCylinder(0.25, 0.10));
@@ -40,7 +56,14 @@ public:
         m_wheel = MobilizedBody::Revolute(hub_body, TransformWorldToBody(hub_body, hub_center, Vec3(0.0, 1.0, 0.0)), wheelInfo, Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), ZAxis)));
     }
 
-    void CreateWheelCollider(MobilizedBody &hub_body, GeneralForceSubsystem &forces, Real r_unloaded)
+    /**
+     * @brief Create a Wheel Collider object
+     *
+     * @param hub_body
+     * @param forces
+     * @param r_unloaded
+     */
+    void createWheelCollider(MobilizedBody &hub_body, GeneralForceSubsystem &forces, Real r_unloaded)
     {
         const Real k = 100 * 1000; // vertical tire stiffness
         const Real c = 500;        // vertical damping
@@ -51,7 +74,12 @@ public:
         Force::Custom(forces, m_contact);
     }
 
-    MobilizedBody GetWheel()
+    /**
+     * @brief Get the Wheel object
+     *
+     * @return MobilizedBody&
+     */
+    MobilizedBody &getWheel()
     {
         return m_wheel;
     }

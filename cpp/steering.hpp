@@ -15,36 +15,71 @@ using namespace json;
 
 using namespace SimTK;
 
+/**
+ * @brief The SteeringSystem base class composing the various steering system bodies (including steering rack and shaft).
+ *
+ */
 class SteeringSystem
 {
-private:
+protected:
     MobilizedBody m_steering_rack;
     MobilizedBody m_steering_shaft;
 
 public:
     SteeringSystem() {}
 
+    /**
+     * @brief Construct a new Steering System object
+     *
+     * @param data dictionary with the steering system hardpoints and inertia data
+     * @param scale scaling applied to the hardpoints, to allow for unit conversion and mirroring
+     * @param chassis_body the steering system is mounted to this body
+     */
     SteeringSystem(JSON data, Vec3 scale, MobilizedBody &chassis_body)
     {
-        CreateSteeringSystem(data, scale, chassis_body);
+        createSteeringSystem(data, scale, chassis_body);
     }
 
-    MobilizedBody &GetRack()
+    /**
+     * @brief Get the Rack object
+     *
+     * @return MobilizedBody&
+     */
+    MobilizedBody &getRack()
     {
         return m_steering_rack;
     }
 
-    MobilizedBody &GetSteeringShaft()
+    /**
+     * @brief Get the Steering Shaft object
+     *
+     * @return MobilizedBody&
+     */
+    MobilizedBody &getSteeringShaft()
     {
         return m_steering_shaft;
     }
 
-    bool HasSteering()
+    /**
+     * @brief The steering system exists or not
+     *
+     * @return true
+     * @return false
+     */
+    bool hasSteering()
     {
         return !m_steering_rack.isEmptyHandle();
     }
 
-    void CreateSteeringSystem(JSON data, Vec3 scale, MobilizedBody &m_chassis, bool simplified = true)
+    /**
+     * @brief Create a Steering System object
+     *
+     * @param data dictionary with the steering system hardpoints and inertia data
+     * @param scale scaling applied to the hardpoints, to allow for unit conversion and mirroring
+     * @param m_chassis the steering system is mounted to this body
+     * @param simplified whether to simplify the steering system or not (neglect beyond steering shaft)
+     */
+    void createSteeringSystem(JSON data, Vec3 scale, MobilizedBody &m_chassis, bool simplified = true)
     {
         /*
             Steering System Overview:

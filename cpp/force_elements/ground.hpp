@@ -6,6 +6,11 @@ using namespace SimTK;
 
 // This Force element holds a point on one body (the "follower") onto a plane
 // on another via a spring that acts always along the plane normal.
+
+/**
+ * @brief WheelContact base class implemented as a custom force element
+ *
+ */
 class WheelContact : public Force::Custom::Implementation
 {
 public:
@@ -26,6 +31,18 @@ public:
         // we make here is likely small
         const Real x = fmax(h_terrain - p_contact[2], 0.0); // + x when below terrain
         return x;
+    }
+
+    void calcGroundVel(const State &state,
+                       Vector_<SpatialVec> &bodyForces,
+                       Vector_<Vec3> &particleForces,
+                       Vector &mobilityForces)
+    {
+        auto ground_velocity = follower.getBodyVelocity(state);
+        // follower.velo
+        // follower.velo
+
+        // ground_velocity.
     }
 
     virtual void calcForce(const State &state,
@@ -53,7 +70,7 @@ public:
         return k * x * x / 2;
     }
 
-private:
+protected:
     UnitVec3 normal;
     MobilizedBody follower;
     Vec3 point;

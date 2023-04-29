@@ -17,6 +17,10 @@ using namespace LookupTable;
 
 namespace ForceElement
 {
+    /**
+     * @brief TabularSpringDamper class implemented as a custom force element. This part contains a spring, damper and bump stop, all characteristics are configurable and with optional extrapolation properties.
+     *
+     */
     class TabularSpringDamper : public Force::Custom::Implementation
     {
     public:
@@ -154,7 +158,7 @@ namespace ForceElement
             // return k * stretch * stretch / 2;    // 1/2 k (x-x0)^2
         }
 
-    private:
+    protected:
         const SimbodyMatterSubsystem &m_matter;
 
         MobilizedBodyIndex m_body1;

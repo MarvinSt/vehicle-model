@@ -5,6 +5,10 @@ using namespace SimTK;
 
 namespace LookupTable
 {
+    /**
+     * @brief TableEntry data structure
+     *
+     */
     struct TableEntry
     {
         Real index;
@@ -12,21 +16,38 @@ namespace LookupTable
         Real integ;
     };
 
+    /**
+     * @brief LookupTable1D with linear interpolation
+     *
+     */
     class LookupTable1D
     {
-    private:
+    protected:
         TableEntry m_table[48];
         int size = 0;
         bool m_allow_extrapolation_begin = true;
         bool m_allow_extrapolation_end = true;
 
     public:
+        /**
+         * @brief Construct a new Lookup Table 1 D object
+         *
+         * @param allow_extrapolation_begin
+         * @param allow_extrapolation_end
+         */
         LookupTable1D(bool allow_extrapolation_begin = true, bool allow_extrapolation_end = true)
         {
             m_allow_extrapolation_end = allow_extrapolation_begin;
             m_allow_extrapolation_end = allow_extrapolation_end;
         }
 
+        /**
+         * @brief Push new items to the table
+         *
+         * @param index
+         * @param value
+         * @return int
+         */
         int push_back(Real index, Real value)
         {
             if (size >= sizeof(m_table))
@@ -50,12 +71,23 @@ namespace LookupTable
             return 0;
         }
 
+        /**
+         * @brief Clear the table contents
+         *
+         * @return int
+         */
         int clear()
         {
             size = 0;
             return 0;
         }
 
+        /**
+         * @brief Evaluate the lookup table with linear interpolation (extapolation configurable)
+         *
+         * @param index
+         * @return Real
+         */
         Real eval(Real index) const
         {
             if (size == 0)
@@ -82,6 +114,12 @@ namespace LookupTable
             return m_table[idx + 0].value + ratio * (m_table[idx + 1].value - m_table[idx + 0].value);
         }
 
+        /**
+         * @brief Evaluate the integral of the lookup table (usefull for energy calculation)
+         *
+         * @param index
+         * @return Real
+         */
         Real eval_integ(Real index) const
         {
             if (size == 0)
@@ -108,6 +146,11 @@ namespace LookupTable
             return m_table[idx + 0].integ + ratio * (m_table[idx + 1].integ - m_table[idx + 0].integ);
         }
 
+        /**
+         * @brief Get the size object
+         *
+         * @return int
+         */
         int get_size()
         {
             return size;

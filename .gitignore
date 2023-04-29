@@ -8,5 +8,5 @@ __pycache__
 *.py
 *.ipynb
 .DS_Store
-
+/doc/latex
 */ChMFTire.cpp

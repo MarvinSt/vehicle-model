@@ -18,7 +18,8 @@ using namespace SimTK;
 class SpringDamperSystem
 {
 protected:
-    std::unique_ptr<ForceElement::TabularSpringDamper> tabular_spring;
+    // std::unique_ptr<ForceElement::TabularSpringDamper> tabular_spring;
+    ForceElement::TabularSpringDamper *tabular_spring;
 
 public:
     SpringDamperSystem(){};
@@ -54,8 +55,8 @@ public:
         auto damping = 1.0 * 1000.0;    // damping ratio
         auto x0 = 0.0;                  // compression at rest length
 
-        auto chassis_link_pos = GetVec3(data["shock_to_chassis"], scale);
-        auto rocker_link_pos = GetVec3(data["shock_to_bellcrank"], scale);
+        auto chassis_link_pos = GetVec3(data["suspension"]["spring_damper"]["chassis"], scale);
+        auto rocker_link_pos = GetVec3(data["suspension"]["spring_damper"]["rocker"], scale);
 
         auto dist = (chassis_link_pos - rocker_link_pos).norm();
 
@@ -63,7 +64,8 @@ public:
         x0 += dist;
 
         // define tabular spring damper element
-        tabular_spring = std::unique_ptr<ForceElement::TabularSpringDamper>(new ForceElement::TabularSpringDamper(chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), rocker_body, PosWorldToBody(rocker_body, rocker_link_pos), x0));
+        // tabular_spring = std::unique_ptr<ForceElement::TabularSpringDamper>(new ForceElement::TabularSpringDamper(chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), rocker_body, PosWorldToBody(rocker_body, rocker_link_pos), x0));
+        tabular_spring = new ForceElement::TabularSpringDamper(chassis_body, PosWorldToBody(chassis_body, chassis_link_pos), rocker_body, PosWorldToBody(rocker_body, rocker_link_pos), x0);
 
         // push linear data (for now)
         tabular_spring->push_spring_table(-1.0, -stiffness);
@@ -72,8 +74,9 @@ public:
         tabular_spring->push_damper_table(-1.0, -damping);
         tabular_spring->push_damper_table(+1.0, +damping);
 
-        const ForceElement::TabularSpringDamper &tabular_spring_ref = *tabular_spring;
-        Force::Custom(forces, tabular_spring.get());
+        // const ForceElement::TabularSpringDamper &tabular_spring_ref = *tabular_spring;
+        // Force::Custom(forces, tabular_spring.get());
+        Force::Custom(forces, tabular_spring);
     }
 
     /**

@@ -37,6 +37,9 @@ public:
      */
     SteeringSystem(JSON data, Vec3 scale, MobilizedBody &chassis_body)
     {
+        if (!data.hasKey("steering"))
+            return;
+
         createSteeringSystem(data, scale, chassis_body);
     }
 
@@ -110,7 +113,7 @@ public:
 
         // Take the tierod inner location as the end point of the steering rack
         // with steering rack position in the middle of the chassis
-        auto steering_rack_end = GetVec3(data["tierod_inner"], scale);
+        auto steering_rack_end = GetVec3(data["suspension"]["toe_link"]["chassis"], scale);
         auto steering_rack_pos = steering_rack_end.elementwiseMultiply(Vec3(1.0, 0.0, 1.0));
 
         // Calculate steering rack direction and length
@@ -118,17 +121,18 @@ public:
         auto steering_rack_len = steering_rack_dir.norm() * 2.0;
 
         // Describe mass and visualization properties for a generic body.
-        Body::Rigid steeringRackInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.01)));
+        auto rack_mass_props = GetMassInertia(data["steering"]["steering_rack"], 1.0, 1.0e-6);
+        Body::Rigid steeringRackInfo(rack_mass_props);
         steeringRackInfo.addDecoration(Transform(FromDirectionVector(Vec3(1.0, 0, 0), YAxis)), DecorativeCylinder(0.01, steering_rack_len / 2.0));
 
         // A slider is defined along the common X-axis, redirect it along the steering axis
         m_steering_rack = MobilizedBody::Slider(m_chassis, TransformWorldToBody(m_chassis, steering_rack_pos, steering_rack_dir, XAxis), steeringRackInfo, Transform(Vec3(0)));
 
         // Get steering shaft and column coordinates
-        auto pinion_center_at_rack = GetVec3(data["pinion_center_at_rack"], scale);
-        auto intermediate_shaft_forward = GetVec3(data["intermediate_shaft_forward"], scale);
-        auto intermediate_shaft_rear = GetVec3(data["intermediate_shaft_rear"], scale);
-        auto steeringwheel_center = GetVec3(data["steeringwheel_center"], scale);
+        auto pinion_center_at_rack = GetVec3(data["steering"]["pinion"]["pos"], scale);
+        auto intermediate_shaft_forward = GetVec3(data["steering"]["intermediate_shaft"]["joint"], scale);
+        auto intermediate_shaft_rear = GetVec3(data["steering"]["steering_colum"]["joint"], scale);
+        auto steeringwheel_center = GetVec3(data["steering"]["steering_wheel"]["pos"], scale);
 
         auto seering_column_dir = steeringwheel_center - intermediate_shaft_rear;
 
@@ -143,7 +147,8 @@ public:
         auto steering_shaft_dir = intermediate_shaft_forward - pinion_center_at_rack;
         auto steering_shaft_len = steering_shaft_dir.norm();
 
-        Body::Rigid steeringShaftInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.01)));
+        auto shaft_mass_props = GetMassInertia(data["steering"]["steering_shaft"], 1.0, 1.0e-6);
+        Body::Rigid steeringShaftInfo(shaft_mass_props);
         steeringShaftInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, steering_shaft_len / 2.0));
 
         m_steering_shaft = MobilizedBody::Revolute(m_chassis, TransformWorldToBody(m_chassis, pinion_center_at_rack, steering_shaft_dir), steeringShaftInfo, Transform(Vec3(0.0, 0.0, -steering_shaft_len / 2.0)));
@@ -170,7 +175,8 @@ public:
         auto intermediate_shaft_dir = intermediate_shaft_rear - intermediate_shaft_forward;
         auto intermediate_shaft_len = intermediate_shaft_dir.norm();
 
-        Body::Rigid intermediateShaftInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.01)));
+        auto intermediate_mass_props = GetMassInertia(data["steering"]["intermediate_shaft"], 1.0, 1.0e-6);
+        Body::Rigid intermediateShaftInfo(intermediate_mass_props);
         intermediateShaftInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, intermediate_shaft_len / 2.0));
 
         auto intermediate_shaft = MobilizedBody::Universal(m_steering_shaft, TransformWorldToBody(m_steering_shaft, intermediate_shaft_forward, intermediate_shaft_dir), intermediateShaftInfo, Transform(Vec3(0.0, 0.0, -intermediate_shaft_len / 2.0)));
@@ -180,7 +186,9 @@ public:
         auto steering_column_len = steering_columm_dir.norm();
 
         // Split the body mass and inertia in half, because we need both a chassis mounted and intermediate shaft mounted part which are welded together
-        Body::Rigid steeringColumnInfo(MassProperties(1.0 / 2.0, Vec3(0), UnitInertia(0.01) / 2.0));
+        auto column_mass_props = GetMassInertia(data["steering"]["steering_column"], 1.0 * 0.5, 1.0e-6 * 0.5);
+        Body::Rigid steeringColumnInfo(column_mass_props);
+
         auto steering_column = MobilizedBody::Universal(intermediate_shaft, TransformWorldToBody(intermediate_shaft, intermediate_shaft_rear, steering_columm_dir), steeringColumnInfo, Transform(Vec3(0.0, 0.0, -steering_column_len / 2.0)));
         steeringColumnInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0)), DecorativeCylinder(0.01, steering_column_len / 2.0));
         steeringColumnInfo.addDecoration(Transform(FromDirectionVector(Vec3(0.0, 1.0, 0), XAxis), Vec3(0.0, 0.0, steering_column_len / 2.0)), DecorativeBrick(Vec3(0.125, 0.025, 0.05)));
@@ -188,5 +196,6 @@ public:
 
         // Weld revolute chassis mounted joint to steering column
         Constraint::Weld(steering_column_cha, steering_column);
+        /* */
     }
 };

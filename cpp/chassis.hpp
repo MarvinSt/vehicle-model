@@ -56,12 +56,12 @@ public:
         auto constrain_chassis = false;
 
         // Describe mass and visualization properties for a generic body.
-        Body::Rigid bodyInfo(MassProperties(200.0, Vec3(0), UnitInertia(200, 600, 600)));
+        auto body_mass_props = GetMassInertia(data["chassis"], 1.0, 1.0e-6);
+        Body::Rigid bodyInfo(body_mass_props);
         bodyInfo.addDecoration(Transform(), DecorativeSphere(0.1));
 
         // create dummy chassis body
-        auto chassis_pos = (GetVec3(data["front"]["wheel_center"], scale) + GetVec3(data["rear"]["wheel_center"], scale)) / 2.0;
-        chassis_pos = Vec3(chassis_pos[0], 0.0, 0.35);
+        auto chassis_pos = GetVec3(data["chassis"]["pos"], scale);
 
         // ceate chassis body with 6 DOF w.r.t. the ground reference
         if (fixed)

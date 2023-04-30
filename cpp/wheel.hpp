@@ -23,12 +23,13 @@ protected:
     // Tire m_tire;
     // Terrain m_terrain (could actually be part of the tire?)
 
-    std::unique_ptr<WheelContact> m_contact;
+    // std::unique_ptr<WheelContact> m_contact;
+    WheelContact *m_contact;
 
 public:
     Wheel() {}
 
-    Wheel(MobilizedBody &hub_body) {}
+    // Wheel(MobilizedBody &hub_body) {}
 
     /**
      * @brief Construct a new Wheel object
@@ -37,9 +38,9 @@ public:
      * @param forces
      * @param r_unloaded
      */
-    Wheel(MobilizedBody &hub_body, GeneralForceSubsystem &forces, Real r_unloaded)
+    Wheel(JSON data, MobilizedBody &hub_body, GeneralForceSubsystem &forces, Real r_unloaded)
     {
-        createWheel(hub_body);
+        createWheel(data, hub_body);
         createWheelCollider(hub_body, forces, r_unloaded);
     }
 
@@ -48,9 +49,11 @@ public:
      *
      * @param hub_body
      */
-    void createWheel(MobilizedBody &hub_body)
+    void createWheel(JSON data, MobilizedBody &hub_body)
     {
-        Body::Rigid wheelInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.1)));
+        auto wheel_mass_props = GetMassInertia(data["wheel"], 1.0, 1.0e-6);
+
+        Body::Rigid wheelInfo(wheel_mass_props);
         wheelInfo.addDecoration(Transform(), DecorativeCylinder(0.25, 0.10));
 
         // attach the wheel spindle mobilizer
@@ -72,8 +75,11 @@ public:
 
         // Attach a wheel contact collider to the hub, this is important, because we need to project straight
         // down along the upright and the spindle is rotating. We can't use the upright body because of possible hub compliance
-        m_contact = std::unique_ptr<WheelContact>(new WheelContact(UnitVec3(0.0, 0.0, 1.0), hub_body, Vec3(0.0, 0.0, -r_unloaded), k, c));
-        Force::Custom(forces, m_contact.get());
+        // m_contact = std::unique_ptr<WheelContact>(new WheelContact(UnitVec3(0.0, 0.0, 1.0), hub_body, Vec3(0.0, 0.0, -r_unloaded), k, c));
+        // Force::Custom(forces, m_contact.get());
+
+        m_contact = new WheelContact(UnitVec3(0.0, 0.0, 1.0), hub_body, Vec3(0.0, 0.0, -r_unloaded), k, c);
+        Force::Custom(forces, m_contact);
     }
 
     /**

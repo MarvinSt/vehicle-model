@@ -20,7 +20,8 @@ int main()
     bool constrain_chassis = false;
 
     // load parameters
-    auto data = LoadParameters("../parameters/kinematics.json");
+    // auto data = LoadParameters("../parameters/kinematics.json");
+    auto data = LoadParameters("../parameters/chassis.json");
 
     // Define the system.
     MultibodySystem system;

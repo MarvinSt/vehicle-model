@@ -129,13 +129,15 @@ public:
         // the hub is the stationary part of the wheel bearing / spindle
 
         // describe mass and visualization properties for a generic body.
-        Body::Rigid uprightInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.1)));
+        auto upright_mass_props = GetMassInertia(data["suspension"]["upright"], 1.0, 1.0e-6);
+        Body::Rigid uprightInfo(upright_mass_props);
         uprightInfo.addDecoration(Transform(), DecorativeSphere(0.025));
 
-        Body::Rigid hubInfo(MassProperties(1.0, Vec3(0), UnitInertia(0.1)));
+        auto hub_mass_props = GetMassInertia(data["suspension"]["hub"], 1.0, 1.0e-6);
+        Body::Rigid hubInfo(hub_mass_props);
         hubInfo.addDecoration(Transform(), DecorativeCylinder(0.05, 0.10));
 
-        Vec3 wheel_center = GetVec3(data["wheel_center"], scale);
+        Vec3 wheel_center = GetVec3(data["suspension"]["upright"]["pos"], scale);
 
         // upright is defined as a free mobilizer (6 DOF) w.r.t. the chassis
         m_upright = MobilizedBody::Free(m_chassis, TransformWorldToBody(m_chassis, wheel_center), uprightInfo, Transform(Vec3(0)));
@@ -155,16 +157,17 @@ public:
      */
     void createRocker(JSON data, Vec3 scale, MobilizedBody &m_chassis)
     {
-        Body::Rigid rockerInfo(MassProperties(0.1, Vec3(0), UnitInertia(0.001)));
+        auto rocker_mass_props = GetMassInertia(data["suspension"]["rocker"], 1.0, 1.0e-6);
+        Body::Rigid rockerInfo(rocker_mass_props);
         // rockerInfo.addDecoration(Transform(), DecorativeSphere(0.025));
 
-        auto rocker_pos = GetVec3(data["bellcrank_pivot"], scale);
-        auto rocker_dir = GetVec3(data["bellcrank_pivot_orient"], scale) - rocker_pos;
+        auto rocker_pos = GetVec3(data["suspension"]["rocker"]["pos"], scale);
+        auto rocker_dir = GetVec3(data["suspension"]["rocker"]["dir"], scale) - rocker_pos;
 
         m_rocker = MobilizedBody::Pin(m_chassis, TransformWorldToBody(m_chassis, rocker_pos, rocker_dir), rockerInfo, Transform(Vec3(0)));
 
-        auto rocker_link_pos = GetVec3(data["prod_to_bellcrank"], scale);
-        auto upright_link_pos = GetVec3(data["prod_outer"], scale);
+        auto rocker_link_pos = GetVec3(data["suspension"]["pushrod"]["rocker"], scale);
+        auto upright_link_pos = GetVec3(data["suspension"]["pushrod"]["upright"], scale);
 
         m_pushpull = CreateLink(m_upright, upright_link_pos, m_rocker, rocker_link_pos);
     }
@@ -198,28 +201,28 @@ public:
         Vec3 chassis_link_pos;
         Vec3 upright_link_pos;
 
-        chassis_link_pos = GetVec3(data["lca_front"], scale);
-        upright_link_pos = GetVec3(data["lca_outer"], scale);
+        chassis_link_pos = GetVec3(data["suspension"]["lca_front"]["chassis"], scale);
+        upright_link_pos = GetVec3(data["suspension"]["lca_front"]["upright"], scale);
 
         m_links[0] = CreateLink(m_chassis, chassis_link_pos, m_upright, upright_link_pos);
 
-        chassis_link_pos = GetVec3(data["lca_rear"], scale);
-        upright_link_pos = GetVec3(data["lca_outer"], scale);
+        chassis_link_pos = GetVec3(data["suspension"]["lca_rear"]["chassis"], scale);
+        upright_link_pos = GetVec3(data["suspension"]["lca_rear"]["upright"], scale);
 
         m_links[1] = CreateLink(m_chassis, chassis_link_pos, m_upright, upright_link_pos);
 
-        chassis_link_pos = GetVec3(data["uca_front"], scale);
-        upright_link_pos = GetVec3(data["uca_outer"], scale);
+        chassis_link_pos = GetVec3(data["suspension"]["uca_front"]["chassis"], scale);
+        upright_link_pos = GetVec3(data["suspension"]["uca_front"]["upright"], scale);
 
         m_links[2] = CreateLink(m_chassis, chassis_link_pos, m_upright, upright_link_pos);
 
-        chassis_link_pos = GetVec3(data["uca_rear"], scale);
-        upright_link_pos = GetVec3(data["uca_outer"], scale);
+        chassis_link_pos = GetVec3(data["suspension"]["uca_rear"]["chassis"], scale);
+        upright_link_pos = GetVec3(data["suspension"]["uca_rear"]["upright"], scale);
 
         m_links[3] = CreateLink(m_chassis, chassis_link_pos, m_upright, upright_link_pos);
 
-        chassis_link_pos = GetVec3(data["tierod_inner"], scale);
-        upright_link_pos = GetVec3(data["tierod_outer"], scale);
+        chassis_link_pos = GetVec3(data["suspension"]["toe_link"]["chassis"], scale);
+        upright_link_pos = GetVec3(data["suspension"]["toe_link"]["upright"], scale);
 
         m_toelink = CreateLink(m_steering, chassis_link_pos, m_upright, upright_link_pos);
     }

@@ -132,12 +132,12 @@ $(document).ready(function(){initNavTree('chassis_8hpp_source.html',''); initRes
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>        <span class="keyword">auto</span> constrain_chassis = <span class="keyword">false</span>;</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>        <span class="comment">// Describe mass and visualization properties for a generic body.</span></div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>        Body::Rigid bodyInfo(MassProperties(200.0, Vec3(0), UnitInertia(200, 600, 600)));</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>        bodyInfo.addDecoration(Transform(), DecorativeSphere(0.1));</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>        <span class="comment">// create dummy chassis body</span></div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>        <span class="keyword">auto</span> chassis_pos = (GetVec3(data[<span class="stringliteral">&quot;front&quot;</span>][<span class="stringliteral">&quot;wheel_center&quot;</span>], scale) + GetVec3(data[<span class="stringliteral">&quot;rear&quot;</span>][<span class="stringliteral">&quot;wheel_center&quot;</span>], scale)) / 2.0;</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>        chassis_pos = Vec3(chassis_pos[0], 0.0, 0.35);</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>        <span class="keyword">auto</span> body_mass_props = GetMassInertia(data[<span class="stringliteral">&quot;chassis&quot;</span>], 1.0, 1.0e-6);</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>        Body::Rigid bodyInfo(body_mass_props);</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>        bodyInfo.addDecoration(Transform(), DecorativeSphere(0.1));</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>        <span class="comment">// create dummy chassis body</span></div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>        <span class="keyword">auto</span> chassis_pos = GetVec3(data[<span class="stringliteral">&quot;chassis&quot;</span>][<span class="stringliteral">&quot;pos&quot;</span>], scale);</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>        <span class="comment">// ceate chassis body with 6 DOF w.r.t. the ground reference</span></div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>        <span class="keywordflow">if</span> (fixed)</div>

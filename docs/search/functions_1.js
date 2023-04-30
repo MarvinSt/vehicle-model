@@ -13,6 +13,6 @@ var searchData=
   ['createsteeringsystem_10',['createSteeringSystem',['../class_steering_system.html#a852e7eea72c293eb5097d236498149b9',1,'SteeringSystem']]],
   ['createtorsionalstiffness_11',['createTorsionalStiffness',['../class_anti_rollbar.html#a6993cee42f870894d940a77b9f152c48',1,'AntiRollbar']]],
   ['createupright_12',['createUpright',['../class_suspension_system.html#ab94281f5939630328e7b019ee4eac524',1,'SuspensionSystem']]],
-  ['createwheel_13',['createWheel',['../class_wheel.html#a14bd1dc3fdc35f797f1db73a685b6ede',1,'Wheel']]],
+  ['createwheel_13',['createWheel',['../class_wheel.html#ade497acfeb7ad19c76c5d91754f52fa0',1,'Wheel']]],
   ['createwheelcollider_14',['createWheelCollider',['../class_wheel.html#a35f87c3b275198c89c033db5eea3d756',1,'Wheel']]]
 ];

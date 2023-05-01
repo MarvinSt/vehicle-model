@@ -11,6 +11,9 @@ var hierarchy =
     [ "json::JSON::JSONConstWrapper< Container >", "classjson_1_1_j_s_o_n_1_1_j_s_o_n_const_wrapper.html", null ],
     [ "json::JSON::JSONWrapper< Container >", "classjson_1_1_j_s_o_n_1_1_j_s_o_n_wrapper.html", null ],
     [ "LookupTable::LookupTable1D", "class_lookup_table_1_1_lookup_table1_d.html", null ],
+    [ "PeriodicEventReporter", null, [
+      [ "PositionReporter", "class_position_reporter.html", null ]
+    ] ],
     [ "SpringDamperSystem", "class_spring_damper_system.html", null ],
     [ "SteeringSystem", "class_steering_system.html", null ],
     [ "SuspensionSystem", "class_suspension_system.html", null ],

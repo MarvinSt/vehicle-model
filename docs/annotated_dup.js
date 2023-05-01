@@ -13,6 +13,7 @@ var annotated_dup =
     [ "AntiRollbar", "class_anti_rollbar.html", "class_anti_rollbar" ],
     [ "Axle", "class_axle.html", "class_axle" ],
     [ "Chassis", "class_chassis.html", "class_chassis" ],
+    [ "PositionReporter", "class_position_reporter.html", null ],
     [ "SpringDamperSystem", "class_spring_damper_system.html", "class_spring_damper_system" ],
     [ "SteeringSystem", "class_steering_system.html", "class_steering_system" ],
     [ "SuspensionSystem", "class_suspension_system.html", "class_suspension_system" ],

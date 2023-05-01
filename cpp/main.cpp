@@ -13,6 +13,33 @@ using namespace SimTK;
 
 using namespace std::chrono;
 
+class PositionReporter : public PeriodicEventReporter
+{
+public:
+    PositionReporter(const MultibodySystem &system, const MobilizedBody &wheel, const MobilizedBody &body, Real interval) : PeriodicEventReporter(interval), system(system), wheel(wheel), body(body)
+    {
+    }
+
+    // Show x-y position of the pendulum weight as a function of time.
+    void handleEvent(const State &state) const override
+    {
+        system.realize(state, Stage::Position);
+        Vec3 pos = body.getBodyOriginLocation(state);
+        Vec3 vel = body.getBodyOriginVelocity(state);
+
+        auto omg = wheel.getMobilizerVelocity(state).get(0);
+
+        // Vec3 v_body = ground.findBodyOriginVelocityInAnotherBody(state, body);
+
+        std::cout << state.getTime() << "\t" << pos << "\t" << vel << "\t" << omg << std::endl;
+    }
+
+private:
+    const MultibodySystem &system;
+    const MobilizedBody &body;
+    const MobilizedBody &wheel;
+};
+
 int main()
 {
     bool test_model = false;
@@ -34,6 +61,11 @@ int main()
     auto scale = Vec3(1.0, 1.0, 1.0) / 1000.0;
     auto vehicle = Chassis(data, scale, forces, ground);
 
+    // push forwards
+    // Force::ConstantForce(forces, vehicle.getChassis(), Vec3(0), -Vec3(1.0, 0.5, 0.0) * 100);
+    Force::ConstantTorque(forces, vehicle.getChassis(), Vec3(1.0, 0.0, 1.0) * 20);
+    system.addEventReporter(new PositionReporter(system, vehicle.getAxle(1).getWheel(0), vehicle.getChassis(), 0.1));
+
     auto step_size = 1.0e-3;
     auto t_end = 20.0;
 
@@ -51,9 +83,10 @@ int main()
     // Simulate for 20 seconds.
     // RungeKuttaMersonIntegrator integ(system);
     // RungeKutta3Integrator integ(system);
+    // integ.setFixedStepSize(step_size);
+
     SemiExplicitEulerIntegrator integ(system, step_size);
 
-    // integ.setFixedStepSize(step_size);
     TimeStepper ts(system, integ);
     ts.initialize(state);
 

@@ -59,6 +59,8 @@ public:
         // attach the wheel spindle mobilizer
         auto hub_center = PosBodyToWorld(hub_body, Vec3(0));
         m_wheel = MobilizedBody::Revolute(hub_body, TransformWorldToBody(hub_body, hub_center, Vec3(0.0, 1.0, 0.0)), wheelInfo, Transform(FromDirectionVector(Vec3(0.0, 1.0, 0.0), ZAxis)));
+
+        Motion::Steady(m_wheel, 10.0);
     }
 
     /**

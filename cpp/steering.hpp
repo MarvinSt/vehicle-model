@@ -137,8 +137,10 @@ public:
         auto seering_column_dir = steeringwheel_center - intermediate_shaft_rear;
 
         // Calculate virtual contact point to achieve desired steering ration
-        auto steering_rack_ratio = 0.0024; // [rev/mm]
-        auto effective_pinion_radius = (1.0 / steering_rack_ratio) * 1.0 / (2.0 * Pi) / 1000.0;
+        // auto steering_rack_ratio = 0.0024; // [rev/mm]
+        // auto effective_pinion_radius = (1.0 / steering_rack_ratio) * 1.0 / (2.0 * Pi) / 1000.0;
+        auto steering_rack_ratio = data["steering"]["pinion"]["ratio"].ToFloat(); // 15.0; // [rad/m]
+        auto effective_pinion_radius = (1.0 / steering_rack_ratio);
 
         // Steering shaft and column mobilizers
         // All joints are defined at the base for convenience (expressed in world frame coordinates converted to body local)

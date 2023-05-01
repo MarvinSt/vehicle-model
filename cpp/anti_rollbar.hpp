@@ -54,7 +54,7 @@ public:
     AntiRollbar(JSON data, Vec3 scale, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, MobilizedBody arb_attachment_body[2])
     {
         createAntiRollbar(data, scale, chassis_body, arb_attachment_body[0], arb_attachment_body[1]);
-        createTorsionalStiffness(forces);
+        createTorsionalStiffness(data, forces);
     }
 
     /**
@@ -98,10 +98,12 @@ public:
      *
      * @param forces
      */
-    void createTorsionalStiffness(GeneralForceSubsystem &forces)
+    void createTorsionalStiffness(JSON data, GeneralForceSubsystem &forces)
     {
         // Define arb stiffness
-        auto torsion_stiffness = 1.00 * 1000.0 / 180.0 * Pi; // base unit N*mm/deg
+        // auto torsion_stiffness = 1.00 * 1000.0 / 180.0 * Pi; // base unit N*mm/deg
+
+        auto torsion_stiffness = data["antirollbar"]["arb"]["stiffness"].ToFloat() * 1000.0 / 180.0 * Pi;
         auto torsion_initial_angle = 0.0;
 
         // Define torsionbar stiffness for the anti-rollbar

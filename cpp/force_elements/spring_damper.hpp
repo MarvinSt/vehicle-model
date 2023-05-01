@@ -29,7 +29,7 @@ namespace ForceElement
             : m_matter(body1.getMatterSubsystem()), m_body1(body1.getMobilizedBodyIndex()), m_station1(station1),
               m_body2(body2.getMobilizedBodyIndex()), m_station2(station2), m_x0(x0), m_f0(f_0), m_x_bump(x_bump)
         {
-            this->m_spring = LookupTable1D();
+            this->m_spring = LookupTable1D(false, true);
             this->m_bumpstop = LookupTable1D(false, false);
             this->m_damper = LookupTable1D();
         }
@@ -88,9 +88,9 @@ namespace ForceElement
 
         Real eval_force(Real d, Real v) const
         {
-            Real stretch = d - m_x0;                               // + -> tension, - -> compression
-            auto frcSpring = m_spring.eval(-(stretch));            // - -> tension, + -> compression
-            auto frcBump = m_bumpstop.eval(-(stretch - m_x_bump)); // - -> tension, + -> compression
+            // Real stretch = d - m_x0;                               // + -> tension, - -> compression
+            auto frcSpring = m_spring.eval(-(d - m_x0));              // - -> tension, + -> compression
+            auto frcBump = m_bumpstop.eval(-(d - (m_x0 + m_x_bump))); // - -> tension, + -> compression
             auto frcDamper = m_damper.eval(v);
 
             return -(frcSpring + frcBump + m_f0); // + -> tension, - -> compression
@@ -98,9 +98,9 @@ namespace ForceElement
 
         Real eval_pot_energy(Real d) const
         {
-            Real stretch = d - m_x0;                                     // + -> tension, - -> compression
-            auto frcSpring = m_spring.eval_integ(-(stretch));            // - -> tension, + -> compression
-            auto frcBump = m_bumpstop.eval_integ(-(stretch - m_x_bump)); // - -> tension, + -> compression
+            // Real stretch = d - m_x0;                               // + -> tension, - -> compression
+            auto frcSpring = m_spring.eval(-(d - m_x0));              // - -> tension, + -> compression
+            auto frcBump = m_bumpstop.eval(-(d - (m_x0 + m_x_bump))); // - -> tension, + -> compression
             // auto frcDamper = m_damper.eval(v);
 
             return -(frcSpring + frcBump + m_f0 * 0.0); // + -> tension, - -> compression

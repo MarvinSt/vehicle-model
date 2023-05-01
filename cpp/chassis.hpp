@@ -87,4 +87,14 @@ public:
         m_axle[0] = Axle(data["front"], scale, forces, m_chassis, true);
         m_axle[1] = Axle(data["rear"], scale, forces, m_chassis, false);
     }
+
+    MobilizedBody &getChassis()
+    {
+        return m_chassis;
+    }
+
+    Axle &getAxle(size_t idx)
+    {
+        return m_axle[idx];
+    }
 };

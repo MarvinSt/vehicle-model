@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.6"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Vehicle Model: Class Index</title>
+<title>Vehicle Model: PositionReporter Class Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -65,7 +65,7 @@ $(function() {
 </div>
 <script type="text/javascript">
 /* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
-$(document).ready(function(){initNavTree('classes.html',''); initResizable(); });
+$(document).ready(function(){initNavTree('class_position_reporter.html',''); initResizable(); });
 /* @license-end */
 </script>
 <div id="doc-content">
@@ -91,41 +91,37 @@ $(document).ready(function(){initNavTree('classes.html',''); initResizable(); })
 </div>
 
 <div class="header">
-  <div class="headertitle"><div class="title">Class Index</div></div>
+  <div class="summary">
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="class_position_reporter-members.html">List of all members</a>  </div>
+  <div class="headertitle"><div class="title">PositionReporter Class Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="qindex"><a class="qindex" href="#letter_A">A</a>&#160;|&#160;<a class="qindex" href="#letter_C">C</a>&#160;|&#160;<a class="qindex" href="#letter_J">J</a>&#160;|&#160;<a class="qindex" href="#letter_L">L</a>&#160;|&#160;<a class="qindex" href="#letter_P">P</a>&#160;|&#160;<a class="qindex" href="#letter_S">S</a>&#160;|&#160;<a class="qindex" href="#letter_T">T</a>&#160;|&#160;<a class="qindex" href="#letter_W">W</a></div>
-<div class="classindex">
-<dl class="classindex even">
-<dt class="alphachar"><a id="letter_A" name="letter_A">A</a></dt>
-<dd><a class="el" href="class_anti_rollbar.html">AntiRollbar</a></dd><dd><a class="el" href="class_axle.html">Axle</a></dd></dl>
-<dl class="classindex odd">
-<dt class="alphachar"><a id="letter_C" name="letter_C">C</a></dt>
-<dd><a class="el" href="class_chassis.html">Chassis</a></dd></dl>
-<dl class="classindex even">
-<dt class="alphachar"><a id="letter_J" name="letter_J">J</a></dt>
-<dd><a class="el" href="classjson_1_1_j_s_o_n.html">JSON</a> (json)</dd><dd><a class="el" href="classjson_1_1_j_s_o_n_1_1_j_s_o_n_const_wrapper.html">JSON::JSONConstWrapper</a> (json)</dd><dd><a class="el" href="classjson_1_1_j_s_o_n_1_1_j_s_o_n_wrapper.html">JSON::JSONWrapper</a> (json)</dd></dl>
-<dl class="classindex odd">
-<dt class="alphachar"><a id="letter_L" name="letter_L">L</a></dt>
-<dd><a class="el" href="class_lookup_table_1_1_lookup_table1_d.html">LookupTable1D</a> (LookupTable)</dd></dl>
-<dl class="classindex even">
-<dt class="alphachar"><a id="letter_P" name="letter_P">P</a></dt>
-<dd><a class="el" href="class_position_reporter.html">PositionReporter</a></dd></dl>
-<dl class="classindex odd">
-<dt class="alphachar"><a id="letter_S" name="letter_S">S</a></dt>
-<dd><a class="el" href="class_spring_damper_system.html">SpringDamperSystem</a></dd><dd><a class="el" href="class_steering_system.html">SteeringSystem</a></dd><dd><a class="el" href="class_suspension_system.html">SuspensionSystem</a></dd></dl>
-<dl class="classindex even">
-<dt class="alphachar"><a id="letter_T" name="letter_T">T</a></dt>
-<dd><a class="el" href="struct_lookup_table_1_1_table_entry.html">TableEntry</a> (LookupTable)</dd><dd><a class="el" href="class_force_element_1_1_tabular_spring_damper.html">TabularSpringDamper</a> (ForceElement)</dd></dl>
-<dl class="classindex odd">
-<dt class="alphachar"><a id="letter_W" name="letter_W">W</a></dt>
-<dd><a class="el" href="class_wheel.html">Wheel</a></dd><dd><a class="el" href="class_wheel_contact.html">WheelContact</a></dd></dl>
-</div>
+<div class="dynheader">
+Inheritance diagram for PositionReporter:</div>
+<div class="dyncontent">
+ <div class="center">
+  <img src="class_position_reporter.png" alt=""/>
+ </div></div>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:ae9c7721abc29eee4cd5fba5c836a3fe2"><td class="memItemLeft" align="right" valign="top"><a id="ae9c7721abc29eee4cd5fba5c836a3fe2" name="ae9c7721abc29eee4cd5fba5c836a3fe2"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>PositionReporter</b> (const MultibodySystem &amp;system, const MobilizedBody &amp;wheel, const MobilizedBody &amp;body, Real interval)</td></tr>
+<tr class="separator:ae9c7721abc29eee4cd5fba5c836a3fe2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abf7ecfe99105af0609ebe99b89340c05"><td class="memItemLeft" align="right" valign="top"><a id="abf7ecfe99105af0609ebe99b89340c05" name="abf7ecfe99105af0609ebe99b89340c05"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>handleEvent</b> (const State &amp;state) const override</td></tr>
+<tr class="separator:abf7ecfe99105af0609ebe99b89340c05"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>cpp/main.cpp</li>
+</ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
+    <li class="navelem"><a class="el" href="class_position_reporter.html">PositionReporter</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.6 </li>
   </ul>
 </div>

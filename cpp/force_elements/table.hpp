@@ -104,12 +104,16 @@ namespace LookupTable
             auto ratio = (index - m_table[idx + 0].index) / (m_table[idx + 1].index - m_table[idx + 0].index);
 
             if (!m_allow_extrapolation_begin)
+            {
                 if (ratio < 0.0)
                     return m_table[idx + 0].value;
+            }
 
             if (!m_allow_extrapolation_end)
+            {
                 if (ratio > 1.0)
                     return m_table[idx + 1].value;
+            }
 
             return m_table[idx + 0].value + ratio * (m_table[idx + 1].value - m_table[idx + 0].value);
         }

@@ -41,8 +41,7 @@ public:
     Axle(JSON data, Vec3 scale, GeneralForceSubsystem &forces, MobilizedBody &chassis_body, bool steering = true)
     {
         // create steering system (this can probably be done implicitly by checking the JSON data)
-        if (steering)
-            m_steering = SteeringSystem(data, scale, chassis_body);
+        m_steering = SteeringSystem(data, scale, chassis_body);
 
         // steering body for the toe link connection (steering rack if available, otherwise chassis)
         auto steering_body = m_steering.hasSteering() ? m_steering.getRack() : chassis_body;
@@ -58,8 +57,8 @@ public:
         m_arb = AntiRollbar(data, scale, forces, chassis_body, arb_attachment_bodies);
 
         // create wheels
-        m_wheel[0] = Wheel(m_suspension[0].getHub(), forces, 0.20);
-        m_wheel[1] = Wheel(m_suspension[1].getHub(), forces, 0.20);
+        m_wheel[0] = Wheel(data, m_suspension[0].getHub(), forces, 0.20);
+        m_wheel[1] = Wheel(data, m_suspension[1].getHub(), forces, 0.20);
     }
 
     /**

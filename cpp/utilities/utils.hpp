@@ -23,6 +23,13 @@ Vec3 GetVec3(JSON data, Vec3 scale = Vec3(1.0, 1.0, 1.0))
     return Vec3(data[0].ToFloat(), data[1].ToFloat(), data[2].ToFloat()).elementwiseMultiply(scale);
 }
 
+MassProperties GetMassInertia(JSON data, Real mass_scale = 1.0, Real inertia_scale = 1.0)
+{
+    auto inertia = GetVec3(data["inertia"]).scalarMultiply(inertia_scale);
+    auto mass = data["mass"].ToFloat() * mass_scale;
+    return MassProperties(mass, Vec3(0), Inertia(inertia));
+}
+
 Vec3 FlipAxis(Vec3 in, int axis)
 {
     in[axis] = -in[axis];
@@ -105,6 +112,8 @@ Constraint CreateLink(MobilizedBody &chassis_body, Vec3 chassis_link_pos, Mobili
     Constraint cons;
 
     auto dist = (chassis_link_pos - upright_link_pos).norm();
+
+    assert(fabs(dist) > 1.0e-3);
 
     switch (variant)
     {

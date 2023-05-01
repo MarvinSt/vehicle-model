@@ -1,12 +1,9 @@
 **.dSYM
+.DS_Store
+/drake
 /cpp/main
 /cpp/tests/test_table
 /cpp/old
-.ipynb_checkpoints
-__pycache__
-*.sdf
-*.py
-*.ipynb
-.DS_Store
 /doc/latex
 */ChMFTire.cpp
+*.pdf

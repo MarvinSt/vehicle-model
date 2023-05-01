@@ -115,9 +115,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a5416f896e2f0fded724d962fb6fad3c9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_anti_rollbar.html#a5416f896e2f0fded724d962fb6fad3c9">createAntiRollbar</a> (<a class="el" href="classjson_1_1_j_s_o_n.html">JSON</a> data, Vec3 scale, MobilizedBody &amp;chassis_body, MobilizedBody &amp;rocker_body_left, MobilizedBody &amp;rocker_body_right)</td></tr>
 <tr class="memdesc:a5416f896e2f0fded724d962fb6fad3c9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a Anti Rollbar object.  <br /></td></tr>
 <tr class="separator:a5416f896e2f0fded724d962fb6fad3c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6993cee42f870894d940a77b9f152c48"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_anti_rollbar.html#a6993cee42f870894d940a77b9f152c48">createTorsionalStiffness</a> (GeneralForceSubsystem &amp;forces)</td></tr>
-<tr class="memdesc:a6993cee42f870894d940a77b9f152c48"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a Torsional Stiffness object.  <br /></td></tr>
-<tr class="separator:a6993cee42f870894d940a77b9f152c48"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a514a903469dcface53ddf174cc347bcd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_anti_rollbar.html#a514a903469dcface53ddf174cc347bcd">createTorsionalStiffness</a> (<a class="el" href="classjson_1_1_j_s_o_n.html">JSON</a> data, GeneralForceSubsystem &amp;forces)</td></tr>
+<tr class="memdesc:a514a903469dcface53ddf174cc347bcd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a Torsional Stiffness object.  <br /></td></tr>
+<tr class="separator:a514a903469dcface53ddf174cc347bcd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
@@ -326,8 +326,8 @@ Force&#160;</td><td class="memItemRight" valign="bottom"><b>m_torsional_stiffess
 
 </div>
 </div>
-<a id="a6993cee42f870894d940a77b9f152c48" name="a6993cee42f870894d940a77b9f152c48"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6993cee42f870894d940a77b9f152c48">&#9670;&#160;</a></span>createTorsionalStiffness()</h2>
+<a id="a514a903469dcface53ddf174cc347bcd" name="a514a903469dcface53ddf174cc347bcd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a514a903469dcface53ddf174cc347bcd">&#9670;&#160;</a></span>createTorsionalStiffness()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -338,9 +338,19 @@ Force&#160;</td><td class="memItemRight" valign="bottom"><b>m_torsional_stiffess
         <tr>
           <td class="memname">void AntiRollbar::createTorsionalStiffness </td>
           <td>(</td>
-          <td class="paramtype">GeneralForceSubsystem &amp;&#160;</td>
-          <td class="paramname"><em>forces</em></td><td>)</td>
+          <td class="paramtype"><a class="el" href="classjson_1_1_j_s_o_n.html">JSON</a>&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">GeneralForceSubsystem &amp;&#160;</td>
+          <td class="paramname"><em>forces</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>

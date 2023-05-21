@@ -28,9 +28,8 @@ public:
         Vec3 vel = body.getBodyOriginVelocity(state);
 
         auto omg = wheel.getMobilizerVelocity(state).get(0);
-        auto omg2 = driveshaft.getMobilizerVelocity(state).get(0);
 
-        std::cout << state.getTime() << "\t" << pos << "\t" << vel << "\t" << omg << "\t" << omg2 << std::endl;
+        std::cout << state.getTime() << "\t" << pos << "\t" << vel << "\t" << omg << "\t" << std::endl;
     }
 
 private:

@@ -376,11 +376,7 @@ public:
         auto VX = omega * re;
         auto VREF = par.LONGVL;
 
-        auto vx_vref_4 = (VX / VREF);
-        vx_vref_4 *= vx_vref_4;
-        vx_vref_4 *= vx_vref_4;
-        vx_vref_4 *= vx_vref_4;
-
+        auto vx_vref_4 = pow(VX / VREF, 4.0);
         auto MY = -FZ * R0 * (par.QSY1 + par.QSY2 * FX / FZ0PR + par.QSY3 * abs(VX / VREF) + par.QSY4 * vx_vref_4);
 
         // TODO: Alternative formula iff QSY1 and QSY2 equal 0
@@ -521,7 +517,7 @@ public:
         // saturate fz, gamma
         auto fz_sat = fmin(fmax(fz, par.FZMIN), par.FZMAX);
         auto fz_scl = fmax(fz, 0.0) / fz_sat;
-        auto gamma = fmin(fmax(gamma, par.CAMMAX), par.CAMMIN);
+        auto gamma_sat = fmin(fmax(gamma, par.CAMMIN), par.CAMMAX);
 
         // calculate rolling radius
         auto re = RadiusRolling(fz_sat);
@@ -533,11 +529,11 @@ public:
         auto alpha = slip.alpha;
         auto kappa = slip.kappa;
 
-        auto fx = fz_scl * Fx(fz_sat, kappa, alpha, gamma);
-        auto fy = fz_scl * Fy(fz_sat, kappa, alpha, gamma);
-        auto mx = fz_scl * Mx(fz_sat, kappa, alpha, gamma);
+        auto fx = fz_scl * Fx(fz_sat, kappa, alpha, gamma_sat);
+        auto fy = fz_scl * Fy(fz_sat, kappa, alpha, gamma_sat);
+        auto mx = fz_scl * Mx(fz_sat, kappa, alpha, gamma_sat);
         auto my = fz_scl * My(fz_sat, omega, re);
-        auto mz = fz_scl * Mz(fz_sat, kappa, alpha, gamma);
+        auto mz = fz_scl * Mz(fz_sat, kappa, alpha, gamma_sat);
 
         if (flip_side)
         {

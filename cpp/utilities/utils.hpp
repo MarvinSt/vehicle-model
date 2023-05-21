@@ -6,6 +6,8 @@
 #include <string>
 #include <fstream>
 
+#include <vector>
+
 using namespace SimTK;
 using namespace json;
 
@@ -66,6 +68,61 @@ Vec3 PosWorldToBody(MobilizedBody body, Vec3 position)
 Vec3 PosBodyToWorld(MobilizedBody body, Vec3 position)
 {
     auto transform = GetGlobalTransform(body);
+    return (transform * Transform(position)).p();
+}
+
+Transform GetGlobalTransformNew(MobilizedBody body)
+{
+    auto transform = Transform(Vec3(0));
+    // transform = body.getDefaultOutboardFrame().invert();
+    while (true)
+    {
+        transform = (body.getDefaultInboardFrame() * body.getDefaultOutboardFrame()) * transform;
+        auto parent_body = body.getParentMobilizedBody();
+
+        if (parent_body.isSameMobilizedBody(body) || parent_body.isGround())
+            break;
+
+        body = parent_body;
+    }
+    return transform;
+}
+
+struct FramePair
+{
+    Transform X_PF;
+    Transform X_BM;
+    // Transform X_FM;
+
+    // FramePair() : X_FM(Transform())
+    // {
+    // }
+};
+
+std::vector<FramePair>
+GetTransformChain(MobilizedBody body)
+{
+    std::vector<FramePair> transform;
+    // auto transform = Transform(Vec3(0));
+    // transform = body.getDefaultOutboardFrame().invert();
+    while (true)
+    {
+        transform.push_back({body.getDefaultInboardFrame(), body.getDefaultOutboardFrame()});
+
+        // transform = (body.getDefaultInboardFrame() * body.getDefaultOutboardFrame()) * transform;
+        auto parent_body = body.getParentMobilizedBody();
+
+        if (parent_body.isSameMobilizedBody(body) || parent_body.isGround())
+            break;
+
+        body = parent_body;
+    }
+    return transform;
+}
+
+Vec3 PosBodyToWorldNew(MobilizedBody body, Vec3 position)
+{
+    auto transform = GetGlobalTransformNew(body);
     return (transform * Transform(position)).p();
 }
 

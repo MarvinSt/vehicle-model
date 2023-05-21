@@ -135,7 +135,7 @@ public:
 
         auto hub_mass_props = GetMassInertia(data["suspension"]["hub"], 1.0, 1.0e-6);
         Body::Rigid hubInfo(hub_mass_props);
-        hubInfo.addDecoration(Transform(), DecorativeCylinder(0.05, 0.10));
+        // hubInfo.addDecoration(Transform(), DecorativeCylinder(0.05, 0.10));
 
         Vec3 wheel_center = GetVec3(data["suspension"]["upright"]["pos"], scale);
 
